@@ -1,21 +1,19 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>Calendar - Month Test</title>
+<title>Calendar - Test</title>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-<script type="text/javascript" src="http://localhost/jquery-plugins/resources/javascripts/jquery-1.6.1.min.js"></script>
-<script type="text/javascript" src="./files/jquery.calendar.js"></script>
-<link rel="stylesheet" media="screen" href="./files/jquery.calendar.css"/>
+<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+<script type="text/javascript" src="../jquery.calendar.js"></script>
+<link rel="stylesheet" media="screen" href="../jquery.calendar.css"/>
 
 <script type="text/javascript">
 $(function(){
 	
 	$('#calendar').cal({
-		
-		monthstodisplay	: 1,
-		
+				
 		allowresize		: true,
 		allowmove		: true,
 		allowselect		: true,
@@ -35,13 +33,16 @@ $(function(){
 			console.log( 'Edited Notes for event: '+uid );
 		},
 		
-		events : [
+		// Load events as .ics
+		events : //'http://staff.digitalfusion.co.nz.local/time/calendar/leave/'
+		
+		[
 			{
 				uid		: 1,
 				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 10:10:00',
 				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 12:00:00',
-				title	: 'Done',
-				color	: '#dddddd'
+				color	: '#dddddd',
+				title	: 'Done'
 			},
 			{
 				uid		: 2,
@@ -51,21 +52,28 @@ $(function(){
 			},
 			{
 				uid		: 3,
+				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 10:30:00',
+				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 12:15:00',
+				color	: 'rgb( 90, 0, 0 )',
+				notes	: 'The cake is a lie.'
+			},
+			{
+				uid		: 4,
 				begins	: $.cal.date().addDays(3).format('Y-m-d')+' 14:15:00',
 				ends	: $.cal.date().addDays(3).format('Y-m-d')+' 16:30:00',
 				notes	: 'An <example> event…'
 			},
 			{
-				uid		: 4,
+				uid		: 5,
 				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 11:30:00',
 				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
 				color	: '#990066',
 				notes	: 'The big game'
 			},
 			{
-				uid		: 5,
-				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
-				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:45:00',
+				uid		: 6,
+				begins	: $.cal.date().addDays(0).format('Y-m-d')+' 12:30:00',
+				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 8:45:00',
 				notes	: 'Good-O'
 			}
 		]
@@ -86,7 +94,7 @@ top: 50px;
 left: 50px;
 right: 50px;
 bottom: 50px;
-border: 1px solid #ccc;
+border: 1px solid #bbb;
 }
 </style>
 

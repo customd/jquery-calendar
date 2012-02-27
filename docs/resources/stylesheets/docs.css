@@ -1,0 +1,54 @@
+html{font-family:sans-serif;font-size:100%;margin:0;padding:0;}
+body{font-size:0.9em;padding:20px;margin:0;}
+h1{color:#0589C8;margin:0 0 15px 0;}
+h2,dt{color:#2A5673;border-bottom:1px dotted #5C8DBD;margin-top:30px;padding:5px;font-size:1.3em;font-weight:bold;}
+h3{color:#2683BD;margin-top:30px;}
+h4{color:#5C8DBD;}
+h2>a{padding-top:20px;}
+h3>a{padding-top:20px;}
+dd{margin:0 0 0 10px;}
+dd::before{position:relative;top:3px;content:url(../images/arrow.png);}
+ul li{list-style:none;background:url(../images/arrow.png) no-repeat 0 0;padding:0 0 0 18px;}
+p.note{font-size:0.8em;margin:10px;color:#333;background:#F2F6FB;padding:8px;border:1px dotted #5C8DBD;}
+p.note.after-code{margin-top:-11px;}
+p.note.before-code{margin-top:-11px;}
+p.note::before{content:'Note: ';}
+code{position:relative;white-space:pre;border:1px dotted #d0d0d0;background: #fafafa;padding:15px;display:block;margin:10px;color:#222;overflow-x:auto;overflow-y:hidden;}
+code:before{position:absolute;top:0px;right:0px;content:'CODE';background:#e0e0e0;color:white;padding:1px 5px 2px 6px;border-bottom-left-radius:5px;font-size:.7em;font-family:sans-serif;}
+code.lang-html:before{content:'HTML';}
+code.lang-xml:before{content:'XML';}
+code.lang-javascript:before{content:'JavaScript';}
+code.lang-json:before{content:'JSON';}
+code.lang-apollo:before{content:'Apollo';}
+code.lang-clj:before{content:'CLJ';}
+code.lang-css:before{content:'CSS';}
+code.lang-go:before{content:'GO';}
+code.lang-hs:before{content:'HS';}
+code.lang-lisp:before{content:'LISP';}
+code.lang-lua:before{content:'LUA';}
+code.lang-ml:before{content:'ML';}
+code.lang-n:before{content:'N';}
+code.lang-proto:before{content:'PROTO';}
+code.lang-scala:before{content:'SCALA';}
+code.lang-sql:before{content:'SQL';}
+code.lang-tex:before{content:'TEX';}
+code.lang-vb:before{content:'Visual Basic';}
+code.lang-vhdl:before{content:'VHDL';}
+code.lang-wiki:before{content:'WIKI';}
+code.lang-xq:before{content:'XQ';}
+code.lang-yaml:before{content:'YAML';}
+author, version, license{display:block;}
+author::before{content:'Author: ';}
+version::before{content:'Version: ';}
+license::before{content:'License: ';}
+h4.demo{margin:15px 10px -5px 10px;}
+div.demo{margin:10px;border:1px dotted #ccc;padding:10px;}
+div.table-holder{margin: 10px;}
+div.table-holder em{color:#808080;}
+div.table-holder.config td:nth-child(2){font-family:monospace;}
+table{border:1px solid #5C8DBD;width:100%;border-collapse:collapse;}
+table th{background: #E6EFFA url('../images/overlay-sprite.png') repeat-x 0 -60px;color:#2A5673;text-shadow:rgba(255,255,255,0.6) 1px 1px 1px;}
+table th,table td{border-bottom: 1px solid #5C8DBD;border-right: 1px solid #5C8DBD;text-align: left;padding: 5px 8px;}
+span.top{float:right;}
+span.top a{font-size:.5em;color:#5C8DBD;}
+a[name="top"]{position:absolute;top:0px;height:0px;}
