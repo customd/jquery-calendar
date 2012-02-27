@@ -1,0 +1,495 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Calendar - Documentation</title>
+
+<script type="text/javascript" src="../resources/javascripts/jquery-1.6.1.min.js"></script>
+<script type="text/javascript" src="../resources/javascripts/prettify.js"></script>
+<script type="text/javascript" src="../resources/javascripts/docs.js"></script>
+<script type="text/javascript" src="./files/jquery.calendar.js"></script>
+
+<link rel="stylesheet" ref="../resources/stylesheets/prettify.css"/>
+<link rel="stylesheet" href="../resources/stylesheets/docs.css"/>
+<link rel="stylesheet" href="./files/jquery.calendar.css"/>
+
+<script type="text/javascript">
+// Create an array of event objects for easy example setup.
+var demoevents = [
+	{
+		uid		: 1,
+		begins	: $.cal.date().addDays(2).format('Y-m-d')+' 10:00:00',
+		ends	: $.cal.date().addDays(2).format('Y-m-d')+' 12:00:00',
+		title	: 'Done',
+		color	: '#dddddd'
+	},
+	{
+		uid		: 2,
+		begins	: $.cal.date().addDays(2).format('Y-m-d')+' 12:15:00',
+		ends	: $.cal.date().addDays(2).format('Y-m-d')+' 13:45:00',
+		notes	: 'Keepin\' it real...\n\nMan.'
+	},
+	{
+		uid		: 3,
+		begins	: $.cal.date().addDays(3).format('Y-m-d')+' 14:15:00',
+		ends	: $.cal.date().addDays(3).format('Y-m-d')+' 16:30:00',
+		notes	: 'An <example> event.'
+	},
+	{
+		uid		: 4,
+		begins	: $.cal.date().addDays(4).format('Y-m-d')+' 11:30:00',
+		ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
+		color	: '#990066',
+		notes	: 'The big game'
+	}
+];
+</script>
+
+<style type="text/css">
+#demo1 div.calendar,
+#demo5 div.calendar,
+#demo6 div.calendar{
+position: relative;
+width: 100%;
+height: 400px;
+font-size: 11px;
+border: 1px solid #b3b3b3;
+}
+
+#demo3 div.calendar1, #demo3 div.calendar2, #demo3 div.calendar3{
+position: relative;
+display: inline-block;
+width: 32.9%;
+height: 200px;
+font-size: 11px;
+border: 1px solid #b3b3b3;
+}
+
+#demo4 div.calendar1, #demo4 div.calendar2, #demo4 div.calendar3{
+position: relative;
+display: inline-block;
+width: 49.6%;
+height: 200px;
+font-size: 11px;
+border: 1px solid #b3b3b3;
+}
+
+#demo5 table{
+width: auto;
+}
+</style>
+</head>
+
+<body onload="prettyPrint();">
+	<!-- Documentation about a plugin -->
+	<h1>Calendar</h1>
+	<author><a href="http://www.digitalfusion.co.nz/about/#samsehnert">Sam Sehnert</a>, <a href="http://www.digitalfusion.co.nz/">Digital Fusion<a/>.</author>
+	<version>1.0.0</version>
+	<a href="changelog.html">changelog</a>
+	<!-- I WISH...<license>Dunno Yet...<a href="http://www.gnu.org/licenses/">GPL-3</a></license>-->
+
+	<p>This is a <a href="http://jquery.com/">jQuery</a> plugin which allows developers to implement an extremely flexible calendar interface with minimal up front development.</p>
+		
+	<h2>Contents</h2>
+	<ul class="quicklink">
+		<li><a href="#demos">Demos</a></li>
+		<li><a href="#download">Download</a></li>
+		<li><a href="#config">Configuration</a></li>
+		<li><a href="#events">Events</a></li>
+		<li><a href="#methods">Methods</a></li>
+		<li><a href="#compatibility">Compatibility</a></li>
+	</ul>
+	
+	<h2>Getting Started</h2>
+
+	<p>The calendar method can be used to create a calendar widget which will allow users to graphically see and optionally edit events. The calendar leaves data implementation up to the developer. Developers can feed event data to the calendar using a standard object notation.</p>
+	<code class="prettyprint lang-javascript">$(function(){
+    $('#myCalendar').cal();
+}</code>
+	<p class="note after-code">The target element must be a relative or absolute positioned block level element of your choice.</p>
+	
+	<p>You simply specify a relative or absolutely positioned parent element (a &lt;div /&gt; would be a typical choice), and the plugin will generate the required HTML within that element.</p>
+	<p>The HTML structure that the plugin generates is relatively complicated, and can vary depending on the setup options you've chosen, but a typical configuration will result in the following basic HTML:</p>
+	<code class="prettyprint lang-html">&lt;div class="ui-cal ui-cal-container"&gt;
+    &lt;div class="ui-cal-timeline"&gt;&lt;!-- Contains time labels (vertical) --&gt;&lt;/div&gt;
+    &lt;div class="ui-cal-dateline"&gt;&lt;!-- Contains date labels (horizontal) --&gt;&lt;/div&gt;
+    &lt;div class="ui-cal-dateline-fill" /&gt;
+    &lt;div class="ui-cal-wrapper"&gt;&lt;!-- Contains 'increment' grid blocks --&gt;&lt;/div&gt;
+&lt;/div&gt;</code>
+
+	<p>You can also use methods implemeneted by this plugin for formatting dates and times using the built in format method.</p>
+	<code class="prettyprint lang-javascript">$(function(){
+    $.cal.format( new Date(), 'Y-m-d H:i:s' ); // OR
+    $.cal.date().format( 'Y-m-d H:i:s' ); // Outputs '1986-04-21 08:00:00' if the current time was 8am on the 21st April 1986.
+}</code>
+	
+	<h2><a name="demos">Demo</a></h2>
+	
+	<h3>Basic Calendar Setup</h3>
+	<p>This is the minimum config you'll need to generate a useful, read only calendar (in fact, you can omit the startdate and daystodisplay, but in most cases you'll want control over which dates are being displayed. In this example, we're using a static array of event objects to populate the calendar with events.</p>
+
+	<div id="demo1" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				$('#demo1 div.calendar').cal({
+					
+					startdate		: '2011-08-01',
+					daystodisplay	: 5,
+					
+					events : [
+						{
+							uid		: 1,
+							begins	: '2011-08-04 10:00:00',
+							ends	: '2011-08-04 11:30:00',
+							notes	: 'Testing... ',
+							color	: 'green'
+						},
+						{
+							uid		: 2,
+							begins	: '2011-08-03 11:00:00',
+							ends	: '2011-08-03 13:45:00',
+							title	: 'Test'
+						}
+					]
+				});
+			});
+			
+		</script>
+		<div class="calendar"></div>
+	</div>
+	
+	<h4 class="demo">JavaScript</h4>
+	<code class="prettyprint lang-javascript">$(function(){
+    $('div.calendar').cal({
+  
+        startdate     : '2011-08-01',
+        daystodisplay : 5,
+    
+        events : [
+            {
+                uid     : 1,
+                begins  : '2011-08-04 10:00:00',
+                ends    : '2011-08-04 11:30:00',
+                notes   : 'Testing...',
+                color	: 'purple'
+            },
+            {
+                uid     : 2,
+                begins  : '2011-08-03 11:00:00',
+                ends    : '2011-08-03 13:45:00',
+                title   : 'Test'
+            }
+        ]
+    });	
+});</code>
+	<h4 class="demo">HTML</h4>
+	<code class="prettyprint lang-html">&lt;div class="calendar"&gt;&lt;/div&gt;</code>
+	
+	<!--
+	<h3><a name="demos">More Demos</a></h3>
+	<ul>
+		<li><a href="./urltodemo.html">A Demo</a></li>
+	</ul>
+	-->
+	
+	<h2><a name="config">Configuration Properties</a></h2>
+	<div class="table-holder config">
+		<table>
+			<thead>
+				<tr><th>Property</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>startdate</td><td><em>*current date*</em></td><td>The first date to display on the calendar, defined as either <a href="http://en.wikipedia.org/wiki/ISO_8601">ISO8601</a> (e.g., '2011-08-01' for first of August 2011) or as a JavaScript date object.</td></tr>
+				<tr><td>daystodisplay</td><td>7</td><td>The number of days in total to display on the calendar.</td></tr>
+				<tr><td>defaultcolor</td><td>'#255BA1'</td><td>The default color to use for an event, where no other color is given in the event object.</td></tr>
+				<!--<tr><td>inactivecolor</td><td>'#dddddd'</td><td>The color of an event which is marked 'invalid'. An event can be marked invalid while dragging, when overlaps are disabled and the event is overlapping another, OR when the eventdrag callback method returns false.</td></tr>-->
+				<tr><td>maskeventlabel</td><td>'g:i A'</td><td>The <a href="#date_masks">date mask</a> used to format the time shown on an event element. When a title is specified on an event object, it is displayed instead of the formatted time.</td></tr>
+				<tr><td>maskdatelabel</td><td>'D, jS'</td><td>The <a href="#date_masks">date mask</a> used to format the date labels shown at the top of the calendar.</td></tr>
+				<tr><td><a href="#masktimelabel">masktimelabel</a></td><td><pre>{
+    '00'    : 'g:i <\\sp\\a\\n>A<\/\\sp\\a\\n>',
+    'noon'  : '\\N\\O\\O\\N'
+}</pre></td><td>An object containing the <a href="#date_masks">date masks</a> used to format the time labels shown at the left of the calendar. The property names specify where the label is to be used, for example, '00' refers to all labels that fall on the hour, '30' refers to all labels that fall on the half hour.</td></tr>
+				<tr><td>daytimestart</td><td>'00:00:00'</td><td>Defines the time that the calendar starts drawing the day. E.g., A setting of '08:00:00' would cause the calendar to draw all hours starting from 8 am through to the daytimeend.</td></tr>
+				<tr><td>daytimeend</td><td>'24:00:00'</td><td>Defines the time that the calendar finishes drawing the day. E.g., A setting of '18:00:00' would cause the calendar to draw all hours starting from daytimestart through to 6 pm.</td></tr>
+				<tr><td>minwidth</td><td>120</td><td>The minimum width in pixels of the each day column. <!--The calendar may extend the width of the day columns to fill available space.--></td></tr>
+				<tr><td>minheight</td><td><em>*calculated*</em></td><td>The minimum height in pixels of each grid row. The default is calculated so that 1 pixel represents 1 minute (i.e., an hour will be 60 pixels).<!--The calendar may extend the height of the grid rows to fill available space.--></td></tr>
+				<!--<tr><td>dragincrement</td><td>'15 mins'</td><td>Defines the time snap for dragging events. E.g., A setting of '30 mins' would allow the user to drag events in 30 minute increments. This does not affect where the event is rendered. An event will be rendered at the given time regardless of this setting, however, it will be snapped to the nearest increment according to this setting when dragging.</td></tr>-->
+				<tr><td><a href="#gridincrement">gridincrement</a></td><td>'15 mins'</td><td>Defined the spacing of the grid lines. E.g., A setting of '30 mins' would create a grid line for every 30 minute increment.</td></tr>
+				<tr><td>allowmove</td><td>false</td><td>When set to true, allows the user to drag an event to a new location on the screen. Most useful with the 'eventmove' <a href="#events">event</a>.</td></tr>
+				<tr><td>allowresize</td><td>false</td><td>When set to true, allows the user to drag handles located at the top and bottom of an event to resize. Most useful with the 'eventresize' <a href="#events">event</a>.</td></tr>
+				<tr><td>allowselect</td><td>false</td><td>When set to true, allows the user to select an event by single clicking. Most useful with the 'eventselect' <a href="#events">event</a>.</td></tr>
+				<tr><td>allowremove</td><td>false</td><td>When set to true, displays a (x) icon in the top right of an event, which removes the event when clicked. Most useful with the 'eventremove' <a href="#events">event</a>.</td></tr>
+				<!--<tr><td>{property}</td><td>{default}</td><td>{description}</td></tr>-->
+			</tbody>
+		</table>
+	</div>
+		
+	<h3>Configuration</h3>
+	<p>Config data can be passed when you first initialise the object, as shown in the demo above. Additionally, you can use the 'option' method to apply or modify config properties.</p>
+	
+	<h3><a name="date_masks">Date Masks</a></h3>
+	<p>Use the <a href="http://php.net/manual/en/function.date.php">php date</a> characters to create your date mask. Be aware when writing your date mask, that any masked characters will need to be double backslashed in the JavaScript source, as demonstrated below. Non masked characters don't need to be escaped.</p>
+	
+	<div id="demo2" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				setInterval(function(){
+					var time = $.cal.date().format( 'Y-m-d<b\\r />g\\h i\\m s\\s a' );
+					$('#demo2 p.output').html( time );
+				}, 1000 );
+			});
+		</script>
+		<p class="output"></p>
+	</div>
+	<code class="prettyprint lang-javascript">$(function(){
+    setInterval(function(){
+        var time = $.cal.date().format( 'Y-m-d&lt;b\\r /&gt;g\\h i\\m s\\s a' );
+        $('p.output').html( time );
+    }, 1000 );
+});</code>
+	<p class="note after-code">Most, but not all of the mask characters implemented in PHP are avaialable due to technical limitations with JavaScript dates. When using an incompatible mask character, an error will be printed in the console log.</p>
+	
+	<h3><a name="masktimelabel">The masktimelabel property</a></h3>
+	<p>The masktimelabel object is available as a flexible way of formatting the time labeles that appear to the left of the calendar. The property names specify where the label is to be used, for example, '00' refers to all labels that fall on the hour, '30' refers to all labels that fall on the half hour, and in a special case, 'noon' refers to 12:00 PM specifically.</p>
+	
+	<div id="demo3" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				$('#demo3 div.calendar1').cal({
+					masktimelabel : {
+						'00' : 'g:i a',
+					}
+				});
+				$('#demo3 div.calendar2').cal({
+					masktimelabel : {
+						'00' : 'g:i a',
+						'30' : '<\\sp\\a\\n>30<\/\\sp\\a\\n>'
+					}
+				});
+				$('#demo3 div.calendar3').cal({
+					masktimelabel : {
+						'00' : 'g:i <\\sp\\a\\n>A<\/\\sp\\a\\n>',
+						'15' : '<\\sp\\a\\n>15<\/\\sp\\a\\n>',
+						'30' : '<\\sp\\a\\n>g:30<\/\\sp\\a\\n>',
+						'45' : '<\\sp\\a\\n>15<\/\\sp\\a\\n>',
+						'noon' : '\\N\\O\\O\\N'
+					}
+				});
+			});
+			
+		</script>
+		<div class="calendar1"></div>
+		<div class="calendar2"></div>
+		<div class="calendar3"></div>
+	</div>
+	<code class="prettyprint lang-javascript">// Left calendar
+$('#div.calendar1').cal({
+    masktimelabel : {
+        '00' : 'g:i a'
+    }
+});
+
+// Center calendar
+$('#div.calendar2').cal({
+    masktimelabel : {
+        '00' : 'g:i a',
+        '30' : '<\\sp\\a\\n>30<\/\\sp\\a\\n>'
+    }
+});
+
+// Right calendar
+$('#div.calendar3').cal({
+    masktimelabel : {
+        '00' : 'g:i <\\sp\\a\\n>A<\/\\sp\\a\\n>',
+        '15' : '<\\sp\\a\\n>15<\/\\sp\\a\\n>',
+        '30' : '<\\sp\\a\\n>g:30<\/\\sp\\a\\n>',
+        '45' : '<\\sp\\a\\n>15<\/\\sp\\a\\n>',
+        'noon' : '\\N\\O\\O\\N'
+    }
+});</code>	
+	<p class="note after-code">The &lt;span /&gt; tags wrap text that we want to show in the lighter grey; this style is defined in jquery.calendar.css.</p>
+	
+	<h3><a name="gridincrement">The gridincrement setting</a></h3>
+	<p>The gridincrement setting allows you to specify where the grid lines appear on the calendar.</p>
+	
+	<div id="demo4" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				$('#demo4 div.calendar1').cal({
+					gridincrement	: '30 mins'
+				});
+				$('#demo4 div.calendar2').cal({
+					gridincrement	: '1 hour'
+				});
+			});
+			
+		</script>
+		<div class="calendar1"></div>
+		<div class="calendar2"></div>
+	</div>
+	
+	<code class="prettyprint lang-javascript">// Left calendar
+$('#demo4 div.calendar1').cal({
+    gridincrement : '30 mins'
+});
+
+// Right calendar
+$('#demo4 div.calendar2').cal({
+    gridincrement : '1 hour'
+});
+</code>
+	
+	<h2><a name="events">Events</a></h2>
+	<div class="table-holder">
+		<table>
+			<thead>
+				<tr><th>Event</th><th>Parameters</th><th>Details</th></tr>
+			</thead>
+			<tbody>
+				<tr><td><a href="#eventmove">eventmove</a></td><td><em>String, Object, Collection</em></td><td>Called when the user finishes a drag operation.<br />Recieves the events UID as passed in the original event object, the data object which represents the appointment, and a jQuery collection containing the event element.</td></tr>
+				<tr><td><a href="#eventresize">eventresize</a></td><td><em>String, Object, Collection</em></td><td>Called when the user finishes a resize operation.<br />Recieves the events UID as passed in the original event object, the data object which represents the appointment, and a jQuery collection containing the event element.</td></tr>
+				<tr><td><a href="#eventselect">eventselect</a></td><td><em>String, Object, Collection<em></td><td>Called when the user clicks on an event.<br />Recieves the events UID as passed in the original event object, the data object which represents the appointment, and a jQuery collection containing the event element.<br />Return false from the callback function to prevent selection.</td></tr>
+				<tr><td><a href="#eventremove">eventremove</a></td><td><em>String, Object, Collection<em></td><td>Called when the user clicks on an events remove button.<br />Recieves the events UID as passed in the original event object, the data object which represents the appointment, and a jQuery collection containing the event element.<br />Return false from the callback function to prevent removal.</td></tr>
+				<tr><td><a href="#eventeditnotes">eventeditnotes</a></td><td><em>String, Object, Collection</em></td><td>Called when the user edits the notes of an event using the inline editing feature.<br />Recieves the events UID as passed in the original event object, the data object which represents the appointment, and a jQuery collection containing the event element.</td></tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<h3><a name="eventselect">Event: eventselect</a></h3>
+	<p>In this example, we show how the eventselet event can be used to display details about the selected appointment. We also see how we can prevent selection by returning false in the hanlder function.</p>
+	<div id="demo5" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				$('#demo5 div.calendar').cal({
+					events		: demoevents,
+					allowselect		: true,
+					eventselect	: function( uid, $event ){
+						if( uid == 1 ){
+							
+							alert('Sorry, this event cannot be selected.');
+							return false;
+							
+						} else {
+							$('#demo5 p.output').text( 'You selected event #'+uid );
+							$('#demo5 table').html(
+								'<tr><td>Begins</td><td>'+$event.data('cal').begins.format('g:i a')+'</td></tr>'+
+								'<tr><td>Ends</td><td>'+$event.data('cal').ends.format('g:i a')+'</td></tr>'
+							);
+						}
+					}
+				})
+			});
+			
+		</script>
+		<div class="calendar"></div>
+		<p class="output">Click an event to select.</p>
+		<table></table>
+	</div>
+	<code class="prettyprint lang-javascript">$('div.calendar').cal({
+    events      : demoevents,
+    allowselect : true,
+    eventselect : function( uid, $event ){
+        if( uid == 1 ){
+
+            alert('Sorry, this event cannot be selected.');
+            return false;
+
+        } else {
+            $('p.output').text( 'You selected event #'+uid );
+            $('table').html(
+                '&lt;tr&gt;&lt;td&gt;Begins&lt;/td&gt;&lt;td&gt;'+$event.data('cal').begins.format('g:i a')+'&lt;/td&gt;&lt;/tr&gt;'+
+                '&lt;tr&gt;&lt;td&gt;&gt;Ends&lt;/td&gt;&lt;td&gt;'+$event.data('cal').ends.format('g:i a')+'&lt;/td&gt;&lt;/tr&gt;'
+            );
+        }
+    }
+});</code>
+
+	<h3><a name="eventremove">Event: eventremove</a></h3>
+	<p>In this example, we show how the eventremove event can be used to perform an action (such as sending of an AJAX request to update the database) when the user clicks the delete button. It also demonstrates that we can prevent the deletion by returning false in the handler function.</p>
+	<div id="demo6" class="demo">
+		<script type="text/javascript">
+			$(function(){
+				$('#demo6 div.calendar').cal({
+					events		: demoevents,
+					allowremove		: true,
+					eventremove	: function( uid ){
+						if( uid == 1 ){
+							
+							alert('Sorry, this event cannot be removed.');
+							return false;
+							
+						} else {
+							$('#demo6 p.output').text( 'You removed event #'+uid );
+						}
+					}
+				});
+			});
+		</script>
+		<div class="calendar"></div>
+		<p class="output"></p>
+	</div>
+	<code class="prettyprint lang-javascript">$('div.calendar').cal({
+    events      : demoevents,
+    allowremove : true,
+    eventremove : function( uid ){
+        if( uid == 1 ){
+			
+            alert('Sorry, this event cannot be removed.');
+            return false;
+			
+        } else {
+            $('p.output').text( 'You removed event #'+uid );
+        }
+    }
+});</code>
+	
+		
+	<h2><a name="methods">Methods</a></h2>
+	<div class="table-holder">
+		<table>
+			<thead>
+				<tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>.cal( 'option', <em>[ Object ]</em> )<br />.cal( 'option', <em>[ String, String ]</em> )</td><td><em>jQuery</em><br /><em>String</em></td><td>Takes a config object, or config string/value and applies the configuration option to the calendar.</td></tr>
+				<tr><td>.cal( 'version' )</td><td><em>String</em></td><td>Returns the version number of the currently installed calendar plugin.</td></tr>
+				<tr><td>.cal( 'destroy' )</td><td><em>jQuery</em></td><td>Removes the calendar from the targeted element, and returns the element to its pre-initialisation state.</td></tr>
+				<tr><td><a href="#cal_date">$.cal.date( <em>[ Date ]</em> )</a></td><td><em>Date</em></td><td>Takes a date object, and returns an extended date object. See the associated documentation for more details on the date methods.</td></tr>
+				<tr><td><a href="#date_masks">$.cal.format( <em>[ Date ]</em> )</a></td><td><em>String</em></td><td>Takes a date object, and returns a formatted string, according to the passed mask.</td></tr>
+				<tr><td><a href="#cal_date">$.cal.incrementsIn( String, String )</a></td><td><em>Number</em></td><td>Takes two strings representing a portion of time, (E.g., '15 mins' or '2 hours' ), and returns the number of times the second increment fits inside the first.<br />For example, $.cal.incrementsIn('1 hour','15 mins') returns <strong>4</strong>.</td></tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<!-- This part is only valid for ONLINE documentation, not downloadable docs.
+	<h2>Download</h2>
+	<h3>Packaged Release</h3>
+	<p>Contains all files required for this plugin, including documentation, addons and external resources.</p>
+	
+	<a href="jquery.plugin.zip">jquery.plugin.zip</a>
+	
+	<h3>Individual Downloads</h3>
+	<p>Download and place the required files and any optional files in a directory that is accessable by your web server.</p>
+	<h4>Required</h4>
+	<ul>
+		<li><a href="http://docs.jquery.com/Downloading_jQuery#Download_jQuery">jQuery</a> (1.0.0 or higher)</li>
+		<li><a href="jquery.plugin.min.zip">jquery.plugin.min.zip</a> (&#8734;kb, Minified for production. Place this file on your server.)</li>
+	</ul>
+	
+	<h4>Optional/Add-Ons</h4>
+	<ul>
+		<li><a href="jquery.plugin-1.0.0.js">jquery.plugin-1.0.0.js</a> (&#8734;kb, Development version)</li>
+		<li><a href="jquery.optionalplugin.js">jquery.optionalplugin.js</a> (&#8734;kb, <a href="#linktodocumentation">Optional plugin name</a>)</li>
+	</ul>
+	-->
+	
+	<h2><a name="compatibility">Compatibility</a></h2>
+	<p>This plugin has been tested, and verified working in the following browsers with JavaScript enabled.</p>
+	<p>That doesn't mean it doesn't work in other browsers, it just means we haven't tested it yet!</p>
+	<ul>
+		<li>Safari 5.1+</li>
+	</ul>
+	
+	<a href="http://docs.jquery.com/Browser_Compatibility">jQuery Browser Compatibility</a>
+</body>
+
+</html>
