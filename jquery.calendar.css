@@ -1,15 +1,11 @@
-/*	CSS For DayCalendar.
-	
-	Please refer to this as a reference when using the external
-	css override document. You will need to specify the exact
-	class names that are specified here to make the override.
-	
-	The override document (<?reactor $com.reactorize.env.function reactor?>Override.css) will only overwrite
-	specific css clauses. Any css that hasn't been declared in the
-	override document will still load as normal (Usual CSS Cascading rules).
-*/
-
-/* STYLES FOR THE ACTUAL CALENDAR ITSELF */
+/**
+ * jQuery timepicker plug-in 1.0.0
+ * Copyright 2012, Digital Fusion
+ * Licensed under the MIT license.
+ * http://teamdf.com/jquery-plugins/license/
+ *
+ * @author Sam Sehnert
+ */
 
 .ui-cal{
 overflow: hidden;
