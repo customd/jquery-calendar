@@ -21,7 +21,20 @@ generate the required HTML within that element.
 
 	<div id="myCalendar"></div>
 
+### Extended Date/Time powers
+
+The calendar plugin includes its own date and time formatting methods (using [PHP style masking](http://php.net/manual/en/function.date.php)).
+
+	$.cal.format( new Date(), 'Y-m-d H:i:s' );
+
+You can also perform complicated date/time arithmetic using the built in date object extender (see the Full plugin documentation for more details).
+
+	var myDate = $.cal.date( '2012-01-01 08:00:00' );
+	myDate.addHours(1.5).format('D, jS F Y, G:i a');
+	
+	// Returns 'Sun, 1st January 2012, 9:30 am'
+
 ### Full plugin documentation
 
 The Documentation for this plugin lives under the docs/ directory. Open it directly 
-in your web browser. All resources are included (except jQuery which is loaded from a CDN).
+in your web browser, or see the [online documentation](http://teamdf.com/jquery-plugins/calendar/).
