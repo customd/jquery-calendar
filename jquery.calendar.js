@@ -532,13 +532,8 @@
 				// Throw an error if we didn't find group end.
 				if( parsing !== 'done' ) throw new err( 'Unexpected end of file. Expecting END:VCALENDAR.', lines.length, '' );
 				
-				console.log( 'Got ICS '+lines.length+' Line(s): ', lines );
-				console.log( 'Parsed: ', calendars );
-				
-				if( calendars.length > 0 ){
-					return calendars.pop();
-				}
-				return false;
+				// Return the parsed calendars.
+				return calendars.length > 0 ? calendars.pop() : false;
 			}			
 		},
 		
@@ -1826,7 +1821,7 @@
 							
 							accepts	: 'text/calendar',
 							dataType: 'text',
-							type	: 'post',
+							type	: 'get',
 							
 							// Pass the calendar dates through
 							// to the data request.
