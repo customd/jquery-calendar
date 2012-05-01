@@ -2465,7 +2465,7 @@
 		W: function() { var onejan = new Date(this.getFullYear(),0,1); return Math.ceil((((this - onejan) / 86400000 ) + onejan.getDay()+1)/7); },
 		// Month
 		F: function() { return $[plugin_name].lang[this.lang].long_month[this.getMonth()]; },
-		m: function() { return (this.getMonth()+1 < 9 ? '0' : '') + (this.getMonth() + 1); },
+		m: function() { return (this.getMonth()+1 < 10 ? '0' : '') + (this.getMonth() + 1); },
 		M: function() { return $[plugin_name].lang[this.lang].short_month[this.getMonth()]; },
 		n: function() { return this.getMonth() + 1; },
 		t: function() { return (new Date((new Date(this.getFullYear(), this.getMonth()+1,1))-1)).getDate(); },
@@ -2514,7 +2514,7 @@
 		W: function() { var onejan = new Date(this.getUTCFullYear(),0,1); return Math.ceil((((this - onejan) / 86400000 ) + onejan.getUTCDay()+1)/7); },
 		// Month
 		F: function() { return $[plugin_name].lang[this.lang].long_month[this.getUTCMonth()]; },
-		m: function() { return (this.getUTCMonth()+1 < 9 ? '0' : '') + (this.getUTCMonth() + 1); },
+		m: function() { return (this.getUTCMonth()+1 < 10 ? '0' : '') + (this.getUTCMonth() + 1); },
 		M: function() { return $[plugin_name].lang[this.lang].short_month[this.getUTCMonth()]; },
 		n: function() { return this.getUTCMonth() + 1; },
 		t: function() { return (new Date((new Date(this.getUTCFullYear(), this.getUTCMonth()+1,1))-1)).getUTCDate(); },
