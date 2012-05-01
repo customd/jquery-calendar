@@ -483,7 +483,7 @@
 				
 					// Skip blank lines.
 					if( !line ) return;
-					
+										
 					switch( parsing ){
 						
 						//case 'done' : If we decide to support more than one calendar in the same ics.
@@ -1372,6 +1372,7 @@
 				var clonedTimeLabel;
 				var clonedDateLabel;
 				var clonedDateFormat;
+				var todayDate = $[plugin_name].date().format('Y-m-d');
 				
 				// Apply the CSS to the master element.
 				// This will automatically get cloned with the element.
@@ -1456,6 +1457,7 @@
 							});
 						
 						if( r<(data.cache.resourcecount-1) ) clonedDate.addClass('ui-'+plugin_name+'-resource');
+						if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today')
 						
 						// Append the cloned dayblock into the container.
 						data.elements.container.append( clonedDate );
@@ -1486,6 +1488,8 @@
 						.find('p')
 							.html( clonedDateObject.format( data.settings.maskdatelabel ) )
 						.end();
+					
+					if( clonedDateFormat === todayDate ) clonedDateLabel.addClass('ui-'+plugin_name+'-today');
 					
 					// Append the cloned daylabel into the container.
 					data.elements.dateline.append( clonedDateLabel );
@@ -1706,7 +1710,7 @@
 						if( data.settings.monthstodisplay === null )	data.settings.monthstodisplay = 1;
 						
 						// Work out the start and end dates.
-						data.settings.startdate		= $.cal.date( data.settings.startyear+'-'+( Number( data.settings.startmonth ) < 10 ? '0' : '' )+Number( data.settings.startmonth )+'-01');
+						data.settings.startdate		= $[plugin_name].date( data.settings.startyear+'-'+( Number( data.settings.startmonth ) < 10 ? '0' : '' )+Number( data.settings.startmonth )+'-01');
 						data.cache.enddate			= data.settings.startdate.addMonths( data.settings.monthstodisplay );
 						
 						// Now work out the number of days to display.
@@ -2040,6 +2044,15 @@
 			return $this;
 		},
 		
+		/**
+		 * Update or Set the settings value. This may require further data parsing, or UI updates.
+		 *
+		 * @param mixed key		: The key of the settings value to set or get, or an object containing a map of values to set.
+		 * @param mixed value 	: (opt) The value to set into @key if @key is a string. 
+		 *
+		 * @return mixed : Returns the settings value if @value is omitted and @key is a string, otherwise, the jQuery collection.
+		 * @scope public.
+		 */
 		option : function( key, value ){
 			var $this = $(this), data = $this.data(plugin_name);
 			

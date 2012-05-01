@@ -183,6 +183,10 @@ box-sizing: border-box;
 -ie-box-sizing: border-box;
 }
 
+.ui-cal .ui-cal-date.ui-cal-today{
+background-color: #F2F6FB;
+}
+
 .ui-cal .ui-cal-resource{
 border-right: 1px dotted #E5E5E2;
 }
