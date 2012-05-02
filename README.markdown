@@ -1,6 +1,6 @@
 jQuery Calendar Plugin
 ======================
-### By Sam Sehnert, Digital Fusion 2012
+### By Sam Sehnert, [Digital Fusion](http://teamdf.com/) 2012
 
 This is a [jQuery](http://jquery.com/) plugin which allows developers to implement an 
 extremely flexible calendar interface with minimal up front development. The calendar 
@@ -27,7 +27,7 @@ The calendar plugin includes its own date and time formatting methods (using [PH
 
 	$.cal.format( new Date(), 'Y-m-d H:i:s' );
 
-You can also perform complicated date/time arithmetic using the built in date object extender (see the Full plugin documentation for more details).
+You can also perform complicated date/time arithmetic using the built in date object extender (see the [full plugin documentation](http://teamdf.com/jquery-plugins/calendar/) for more details).
 
 	var myDate = $.cal.date( '2012-01-01 08:00:00' );
 	myDate.addHours(1.5).format('D, jS F Y, G:i a');
