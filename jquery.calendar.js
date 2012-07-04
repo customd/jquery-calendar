@@ -91,6 +91,10 @@
 		eventmove		: $.noop,
 		eventresize		: $.noop,
 		
+		// day events
+		dayclick		: $.noop,
+		daydblclick		: $.noop,
+		
 		// Other events.
 		onload			: $.noop
 	};
@@ -594,8 +598,8 @@
 						
 						// Calculate the new CSS.
 						var newStylesMain = {
-							top				: i>0 ? 0 : data.cache.incrementHeight * $[plugin_name].date( values.begins, data.settings.daytimestart ).getIncrementBetween( values.begins, data.settings.gridincrement ),
-							left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
+							top				: i>0 ? 0 : data.cache.incrementHeight * $[plugin_name].date( values.cache.begins, data.settings.daytimestart ).getIncrementBetween( values.cache.begins, data.settings.gridincrement ),
+							left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.cache.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
 							width			: ( values.resource !== null ? data.cache.resourceWidth : data.cache.dayWidth ) - 1,
 							height			: Math.min( data.cache.dayHeight, data.cache.incrementHeight * ( i<1 ? values.begins : dayBegins ).getIncrementBetween( ( i==$events.length-1 ? values.cache.ends : dayEnds ), data.settings.gridincrement ) ),
 							backgroundColor : $event.hasClass('selected') ? values.colors.mainSelected : values.colors.mainBackground,
@@ -668,7 +672,7 @@
 			 */
 			calculateElementCount : function( values ){
 				// Return the number of elements that should be drawn for this object.
-				return Math.ceil( values.begins.getDaysBetween( values.cache.ends, true ) )+1;
+				return Math.ceil( values.cache.begins.getDaysBetween( values.cache.ends, true ) )+1;
 			},
 			
 			/**
@@ -701,6 +705,7 @@
 					
 					// Work out the cached end date.
 					values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
+					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
 					
 					// Set the new value into the event data.
 					$events.find('pre.details').text( values.notes );
@@ -1161,6 +1166,7 @@
 							
 						// Set the new values to the testTime.
 						values.begins = drag.bTime = testTime;
+						values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
 						
 						// Store the new event time to the element.
 						$event.data(plugin_name,values);
@@ -1304,6 +1310,7 @@
 					values.begins	= drag.bTime = testTimeB;
 					values.ends		= drag.eTime = testTimeE;
 					values.cache.ends = ( data.cache.enddate < testTimeE ? data.cache.enddate.addSeconds(-1) : testTimeE );
+					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
 					
 					// Store the new event time to the element.
 					$event.data(plugin_name,values);
@@ -1359,15 +1366,15 @@
 			week : function( data ){
 				
 				// Initialise variables for the loops below.
-				var clonedTime;
-				var clonedDate;
-				var clonedTimeObject;
-				var clonedDateObject;
-				var clonedResourceLabel;
-				var clonedTimeLabel;
-				var clonedDateLabel;
-				var clonedDateFormat;
-				var todayDate = $[plugin_name].date().format('Y-m-d');
+				var clonedTime,
+					clonedDate,
+					clonedTimeObject,
+					clonedDateObject,
+					clonedResourceLabel,
+					clonedTimeLabel,
+					clonedDateLabel,
+					clonedDateFormat,
+					todayDate = $[plugin_name].date().format('Y-m-d');
 				
 				// Apply the CSS to the master element.
 				// This will automatically get cloned with the element.
@@ -1526,11 +1533,11 @@
 			*/
 			month : function( data ){
 				
-				var clonedMonth;
-				var clonedDate;
-				var clonedDateLabel;
-				var clonedDateObject;
-				var clonedDateFormat;
+				var clonedMonth,
+					clonedDate,
+					clonedDateLabel,
+					clonedDateObject,
+					clonedDateFormat;
 								
 				data.elements.datelabel.css({
 					width	: data.cache.dayWidth,
@@ -1932,11 +1939,12 @@
 				
 				// Cache the end date (make sure for internal purposes it doesn't extend after the last displaying date.
 				values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
+				values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
 				
 				// Calculate the number of elements required to render this event.
 				// This would usually be one event per day * the number of resources this event is applied to.
 				var daysInEvent = _private.event.calculateElementCount.apply(this, [values]);
-				
+								
 				// Loop to create the number of elements required to render this event.
 				while( daysInEvent > $events.length ) $events = $events.add($event.clone(true));
 				
@@ -1945,9 +1953,12 @@
 				if( data.cache.enddate >= values.ends ){
 					$events.last().removeClass('mid').addClass('end');
 				}
-							
-				// Add the event to the data array, and to the DOM.
-				data.elements.container.append($events);
+				
+				// Only add the event to the data array, and to the DOM,
+				// if it falls within the date range.
+				if( data.cache.enddate > values.begins && data.settings.startdate < values.ends ){			
+					data.elements.container.append($events);
+				}
 				
 				// Store the $events elements in the event data object.
 				values.elems = $events;
