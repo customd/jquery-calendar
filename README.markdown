@@ -6,6 +6,17 @@ This is a [jQuery](http://jquery.com/) plugin which allows developers to impleme
 extremely flexible calendar interface with minimal up front development. The calendar 
 plugin can render a Day, Week, Month and Resource calendar view.
 
+Demos
+-----
+
+The Demos for this plugin live under the examples/ directory. Open them directly in your web browser, or view the following online example:
+
+- [Day Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/day.html)
+- [Week Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/week.html)
+- [Month Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/month.html)
+- ['Resource' Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/resource.html)
+- [London 2012 Olympics iCalendar Feed](http://www.teamdf.com/jquery-plugins/calendar/examples/london-2012-ics.html)
+
 Documentation
 -------------
 ### Basic calendar instance
@@ -38,3 +49,9 @@ You can also perform complicated date/time arithmetic using the built in date ob
 
 The Documentation for this plugin lives under the docs/ directory. Open it directly 
 in your web browser, or see the [online documentation](http://teamdf.com/jquery-plugins/calendar/).
+
+License
+-------
+
+Copyright 2012, [Digital Fusion](http://teamdf.com),
+Released under the [MIT license](http://teamdf.com/jquery-plugins/license/).

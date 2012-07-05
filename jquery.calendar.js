@@ -1892,13 +1892,20 @@
 				if( !'begins' in bData )	throw _private.errors.eventParse('Missing start date/time (begins)',bData);
 				if( !'ends' in bData )		throw _private.errors.eventParse('Missing end date/time (ends)',bData);
 				
+				// Parse the dates.
+				var dataBegins	= $[plugin_name].date( bData.begins ),
+					dataEnds	= $[plugin_name].date( bData.ends );
+				
+				// Discard any events we can't draw in this set.
+				if( dataEnds < data.settings.startdate || dataBegins > data.cache.enddate ) return false;
+								
 				// Clone the event element, and set up the values.
 				var values	= {
 					elems		: $([]),
 					calendar	: $this,
 					uid			: bData.uid,
-					begins		: $[plugin_name].date( bData.begins ),
-					ends		: $[plugin_name].date( bData.ends ),
+					begins		: dataBegins,
+					ends		: dataEnds,
 					resource	: data.settings.resources && bData.resource ? _private.resourceIndex.apply( this, [bData.resource,data] ) : null ,
 					colors		: bData.color ? $[plugin_name].colors.generate( bData.color ) : data.settings.defaultcolor,
 					title		: bData.title || null,
@@ -1949,10 +1956,8 @@
 				while( daysInEvent > $events.length ) $events = $events.add($event.clone(true));
 				
 				// Set the classes for begin and end.
-				$events.first().removeClass('mid').addClass('begin');
-				if( data.cache.enddate >= values.ends ){
-					$events.last().removeClass('mid').addClass('end');
-				}
+				if( data.settings.startdate <= values.begins )	$events.first().removeClass('mid').addClass('begin');
+				if( data.cache.enddate >= values.ends )			$events.last().removeClass('mid').addClass('end');
 				
 				// Only add the event to the data array, and to the DOM,
 				// if it falls within the date range.
