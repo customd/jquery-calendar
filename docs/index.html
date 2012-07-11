@@ -183,6 +183,43 @@ width: auto;
 	<h4 class="demo">HTML</h4>
 	<code class="prettyprint lang-html">&lt;div class="calendar"&gt;&lt;/div&gt;</code>
 	
+	<h3>Multiple Calendar Setup</h3>
+	<p>This syntax allows you to display events from multiple sources in the same calendar layout. This is especially useful when combining events from shared ics feeds, and your own sources.</p>
+	
+	<h4 class="demo">JavaScript</h4>
+		<code class="prettyprint lang-javascript">$(function(){
+	    $('div.calendar').cal({
+	  
+	        startdate     : '2011-08-01',
+	        daystodisplay : 5,
+	    
+	        calendars : [
+	        	
+	        	// Calendar source 1
+		        [
+		            {
+		                uid     : '1@cal1',
+		                begins  : '2011-08-04 08:00:00',
+		                ends    : '2011-08-04 09:30:00',
+		                notes   : 'Calendar 1...',
+		                color	: 'purple'
+		            }
+		        ],
+		        
+		        // Calendar source 2
+		        [
+		            {
+		                uid     : '1@cal1',
+		                begins  : '2011-08-04 10:00:00',
+		                ends    : '2011-08-04 11:30:00',
+		                notes   : 'Calendar 2...',
+		                color	: 'green'
+		            }
+		        ]
+	        ]
+	    });	
+	});</code>
+	
 	<h3><a name="demos">More Demos</a></h3>
 	<ul>
 		<li><a href="../examples/day.html">Day View</a></li>

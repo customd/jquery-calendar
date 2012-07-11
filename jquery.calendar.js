@@ -1691,6 +1691,7 @@
 							dayWidth		: undefined,
 							dayHeight		: undefined,
 							events			: {},
+							calendars		: {}
 						}
 					}
 					
@@ -1815,54 +1816,70 @@
 					// Store the data.
 					$this.data(plugin_name,data);
 					
-					if( $.isArray( data.settings.events ) ){
-						// Loop over the events and convert to date objects if required.
-						for( var i=0, event; i<data.settings.events.length; i++ ){
-							methods.add.apply( $this, [data.settings.events[i]] );
-						}
-						
-					} else if( typeof data.settings.events == 'string' ){
-						
-						// If we've been given a string, assume its a URL.
-						$.ajax( data.settings.events, {
-							
-							accepts	: 'text/calendar',
-							dataType: 'text',
-							type	: 'get',
-							
-							// Pass the calendar dates through
-							// to the data request.
-							data	: {
-								from	: data.settings.datefrom,
-								to		: data.settings.dateto
-							},
-							
-							/**
-							 * iCalendar response handler.
-							 *
-							 * @param string response	: The iCalendar file to parse into events.
-							 *
-							 * @return void;
-							 */
-							success	: function( response ){
-								
-								// Parse the icalendar file.
-								var calendar = _private.parse.icalendar.apply($this,[response]);
-								
-								// Check if we've got some valid calendar data.
-								if( calendar && 'events' in calendar && $.isArray( calendar.events ) && calendar.events.length > 0 ){
-									// Loop over the events and convert to date objects if required.
-									for( var i=0, event; i<calendar.events.length; i++ ){
-										methods.add.apply( $this, [calendar.events[i]] );
-									}
-								}
-							}
-						});
-						
+					// If we've specified an events array / object then 
+					if( !$.isArray( data.settings.calendars ) ){
+						data.settings.calendars = [data.settings.events];
 					}
 					
-					// Clear out the events element.
-					data.settings.events = undefined;
+					// Allow addition of multiple calendars.
+					$(data.settings.calendars).each(function(){
+						
+						var events, color;
+						if( $.isArray( this ) ){ events = this; } else if( typeof this == 'string' ){ events = this } else if( $.isPlainObject( this ) ){ events = this.events; color = this.color; }
+						
+						if( $.isArray( events ) ){
+							// Loop over the events and convert to date objects if required.
+							for( var i=0; i<events.length; i++ ){
+								// Set the default color if none is set already.
+								if( !('color' in events[i]) ) events[i].color = color;
+								methods.add.apply( $this, [events[i]] );
+							}
+							
+						} else if( typeof events == 'string' ){
+							
+							// If we've been given a string, assume its a URL.
+							$.ajax( events, {
+								
+								accepts		: 'text/calendar',
+								dataType	: 'text',
+								type		: 'get',
+								crossDomain	: true,
+								
+								// Pass the calendar dates through
+								// to the data request.
+								data : {
+									from	: data.settings.datefrom,
+									to		: data.settings.dateto
+								},
+								
+								/**
+								 * iCalendar response handler.
+								 *
+								 * @param string response	: The iCalendar file to parse into events.
+								 *
+								 * @return void;
+								 */
+								success	: function( response ){
+									
+									// Parse the icalendar file.
+									var calendar = _private.parse.icalendar.apply($this,[response]);
+									
+									// Check if we've got some valid calendar data.
+									if( calendar && 'events' in calendar && $.isArray( calendar.events ) && calendar.events.length > 0 ){
+										// Loop over the events and convert to date objects if required.
+										for( var i=0, event; i<calendar.events.length; i++ ){
+											if( !('color' in calendar.events[i]) ) calendar.events[i].color = color;
+											methods.add.apply( $this, [calendar.events[i]] );
+										}
+									}
+								}
+							});
+						}
+					});
+					
+					// Clear out the events / calendars from settings.
+					data.settings.calendars	= undefined;
+					data.settings.events	= undefined;
 					
 					// Fire the onload method.
 					data.settings.onload.apply($this);
