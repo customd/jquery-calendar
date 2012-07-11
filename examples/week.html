@@ -17,7 +17,7 @@
 <script type="text/javascript">
 $(function(){
 	
-	$('#calendar').cal({
+	$calendar = $('#calendar').cal({
 		
 		startdate		: $.cal.date().addDays(1-$.cal.date().format('N')), // Week beginning sunday.
 		
@@ -41,14 +41,21 @@ $(function(){
 			console.log( 'Edited Notes for event: '+uid );
 		},
 		
-		// Load events as .ics
+		// Use the random event generator to build a set of random events.
 		events : randomEvents()
 		
 	});
 	
+	/**
+	 * Set the initial header value.
+	 */
+	$('#date_head').text( formatRange( $calendar.cal( 'option', 'startdate' ), $calendar.cal( 'option', 'startdate' ).addDays( $calendar.cal('option','daystodisplay')-1 ) ) );
 	
 	/**
-	 * Button click handler.
+	 * Button click handler. 
+	 *
+	 * TODO: Turn this into a drop-in module for calendars once we've got the capability to 
+	 * 		 toggle calendar views without reloading. Include 'formatRange' method.
 	 */
 	$('#controls').on('click','button[name]',function(){
 		
@@ -60,34 +67,55 @@ $(function(){
 		// Switch to the new state.
 		switch( action ) {
 			
-			case 'day'		:
-			case 'year'		:
-			case 'month'	:
-				console.log('Not yet implemented.');
-			break;
+			/** 
+			 * TODO: For now... ideally you'd be able to toggle between views without reloading.
+			 */
+			case 'day'		: window.location = 'day.html'; break;
+			case 'year'		: window.location = 'year.html'; break;
+			case 'month'	: window.location = 'month.html'; break;
 			
 			case 'prev'		:
 			case 'today'	:
 			case 'next'		:
 				
-				var $calendar = $('#calendar'),
-					starting = $calendar.cal('option','startdate'),
+				var starting = $calendar.cal('option','startdate'),
 					duration = $calendar.cal('option','daystodisplay'),
-					newstart = starting;
-					
+					newstart = starting,
+					newend;
+				
 				switch( action ){	
 					case 'next' : newstart = starting.addDays(duration); break;
 					case 'prev'	: newstart = starting.addDays(0-duration); break;
+					case 'today': newstart = $.cal.date().addDays(1-$.cal.date().format('N')); break;
 					case 'next' : newstart = $.cal.date().addDays($.cal.date().format('N')-1)
 				}
 				
+				// Work out the new end date.
+				newend = newstart.addDays(duration-1);
+				
 				// Set the new startdate.
 				$calendar.cal( 'option','startdate', newstart );
+				
+				// Set the new date in the header.
+				$('#date_head').text( formatRange( newstart, newend ) )
 			break;
 		}
 		
 	});
 });
+
+function formatRange( start, end )
+{
+	var sameMonth	= 'jS',
+		sameYear	= 'jS M',
+		diffDays	= start.format('Ymd') != end.format('Ymd'),
+		diffMonths	= diffDays ? start.format('Ym') != end.format('Ym') : false,
+		diffYears	= diffMonths ? start.format('Y') != end.format('Y') : false,
+		fullFormat	= 'jS M Y',
+		startFormat	= diffYears || !diffDays ? fullFormat : ( diffMonths ? sameYear : sameMonth ),
+		separator	= ' - ';
+	return start.format(startFormat)+( diffDays ? separator+end.format(fullFormat) : '' );
+}
 
 </script>
 
@@ -101,6 +129,7 @@ $(function(){
 		<li><button name="month">Month</button></li>
 		<li><button name="year">Year</button></li>
 	</ol>
+	<h1 id="date_head"></h1>
 	<ol id="nav">
 		<li><button name="prev">Previous</button></li>
 		<li><button name="today">Today</button></li>
@@ -114,6 +143,7 @@ html,body{
 font-family: sans-serif;
 font-size: 10px;
 }
+
 #calendar{
 position: absolute;
 top: 75px;
@@ -123,10 +153,18 @@ bottom: 50px;
 border: 1px solid #bbb;
 }
 
+#date_head{
+position: absolute;
+right: 200px;
+margin: auto;
+text-align: center;
+left: 200px;
+}
+
 #controls{
 position: absolute;
 top: 30px;
-height: 30px;
+height: 23px;
 left: 50px;
 right: 50px;
 margin: 0;
