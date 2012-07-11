@@ -9,10 +9,17 @@
 <script type="text/javascript" src="../jquery.calendar.js"></script>
 <link rel="stylesheet" media="screen" href="../jquery.calendar.css"/>
 
+<!-- For loading up a set of demo events. We use a static array of pre-built events -->
+<!-- as well as a random event generation method for demo purposes only -->
+<script type="text/javascript" src="./events_random.js"></script>
+
+
 <script type="text/javascript">
 $(function(){
 	
 	$('#calendar').cal({
+		
+		startdate		: $.cal.date().addDays(1-$.cal.date().format('N')), // Week beginning sunday.
 		
 		allowresize		: true,
 		allowmove		: true,
@@ -20,7 +27,7 @@ $(function(){
 		allowremove		: true,
 		allownotesedit	: true,
 		
-		maskdatelabel	: 'D',
+		//maskdatelabel	: 'D',
 		
 		eventselect : function( uid ){
 			console.log( 'Selected event: '+uid );
@@ -30,51 +37,77 @@ $(function(){
 			console.log( 'Removed event: '+uid );
 		},
 		
-		
 		eventnotesedit : function( uid ){
 			console.log( 'Edited Notes for event: '+uid );
 		},
 		
 		// Load events as .ics
-		events : [
-			{
-				uid		: 1,
-				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 10:10:00',
-				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 12:00:00',
-				title	: 'Done',
-				color	: '#dddddd'
-			},
-			{
-				uid		: 2,
-				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 12:15:00',
-				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 13:45:00',
-				notes	: 'Keepin\' it real…\n\nMan.'
-			},
-			{
-				uid		: 3,
-				begins	: $.cal.date().addDays(3).format('Y-m-d')+' 14:15:00',
-				ends	: $.cal.date().addDays(3).format('Y-m-d')+' 16:30:00',
-				notes	: 'An <example> event…'
-			},
-			{
-				uid		: 4,
-				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 11:30:00',
-				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
-				color	: '#990066',
-				notes	: 'The big game'
-			},
-			{
-				uid		: 5,
-				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
-				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:45:00',
-				notes	: 'Good-O'
-			}
-		]
+		events : randomEvents()
 		
 	});
 	
+	
+	/**
+	 * Button click handler.
+	 */
+	$('#controls').on('click','button[name]',function(){
+		
+		var $this = $(this), action = $this.attr('name');
+		
+		// If this is already the current state, just exit.
+		if( $this.is('.on') ) return;
+		
+		// Switch to the new state.
+		switch( action ) {
+			
+			case 'day'		:
+			case 'year'		:
+			case 'month'	:
+				console.log('Not yet implemented.');
+			break;
+			
+			case 'prev'		:
+			case 'today'	:
+			case 'next'		:
+				
+				var $calendar = $('#calendar'),
+					starting = $calendar.cal('option','startdate'),
+					duration = $calendar.cal('option','daystodisplay'),
+					newstart = starting;
+					
+				switch( action ){	
+					case 'next' : newstart = starting.addDays(duration); break;
+					case 'prev'	: newstart = starting.addDays(0-duration); break;
+					case 'next' : newstart = $.cal.date().addDays($.cal.date().format('N')-1)
+				}
+				
+				// Set the new startdate.
+				$calendar.cal( 'option','startdate', newstart );
+			break;
+		}
+		
+	});
 });
+
 </script>
+
+</head>
+
+<body>
+<div id="controls">
+	<ol id="cals">
+		<li><button name="day">Day</button></li>
+		<li class="on"><button name="week">Week</button></li>
+		<li><button name="month">Month</button></li>
+		<li><button name="year">Year</button></li>
+	</ol>
+	<ol id="nav">
+		<li><button name="prev">Previous</button></li>
+		<li><button name="today">Today</button></li>
+		<li><button name="next">Next</button></li>
+	</ol>
+</div>
+<div id="calendar"></div>
 
 <style type="text/css">
 html,body{
@@ -83,18 +116,83 @@ font-size: 10px;
 }
 #calendar{
 position: absolute;
-top: 50px;
+top: 75px;
 left: 50px;
 right: 50px;
 bottom: 50px;
 border: 1px solid #bbb;
 }
+
+#controls{
+position: absolute;
+top: 30px;
+height: 30px;
+left: 50px;
+right: 50px;
+margin: 0;
+padding: 0;
+}
+
+#controls ol{
+list-style-type: none;
+margin: 0;
+padding: 0;
+border: 1px solid #B3B3B3;
+border-radius: 2px;
+overflow: hidden;
+-moz-background-clip: padding;     /* Firefox 3.6 */
+-webkit-background-clip: padding;  /* Safari 4? Chrome 6? */
+background-clip: padding-box;      /* Firefox 4, Safari 5, Opera 10, IE 9 */
+height: 21px;
+}
+
+#controls ol li{
+display: inline-block;
+float: left;
+height: 100%;
+padding: 0;
+margin: 0;
+border: 0;
+background: #CACACA url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAUCAYAAABMDlehAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADlJREFUeNp0y6sNACAAxNALBs0ArM9QbMEnJKiD4jEvNZXtEiRVEBg2LJgwoEN7pbtlSBBBX44AAwARiCdWebcYiAAAAABJRU5ErkJggg==) repeat-x 0 0; /* Old browsers */
+text-shadow: rgba(255, 255, 255, 0.5) 0px 1px 0px;
+color: #333;
+}
+
+#controls ol li:hover{
+background-color: #C0C0C0;
+color: #000;
+}
+
+#controls ol li.on{
+background: #C4C4C4;
+color: #555;
+}
+
+#controls ol li button{
+margin: 0;
+background: transparent;
+border: 0;
+border-left: 1px solid #B3B3B3;
+height: 100%;
+padding: 0 10px;
+color: inherit;
+text-shadow: inherit;
+cursor: pointer;
+}
+
+#controls ol li:first-child button{
+border-left: 0;
+}
+
+#cals{
+float: left;
+}
+
+#nav{
+float: right;
+}
 </style>
 
-</head>
-
-<body>
-<div id="calendar"></div>
 </body>
 
 </html>

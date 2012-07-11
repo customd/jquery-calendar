@@ -80,7 +80,8 @@
 			eventupdate		: 'linear',
 			eventremove		: 'linear',
 			eventeditin		: 'linear',
-			eventeditout	: 'linear'
+			eventeditout	: 'linear',
+			datechange		: 'linear'
 		},
 		
 		// appointment events.
@@ -219,6 +220,22 @@
 		},
 		
 		/**
+		 * Check to see if a date range overlaps any part of a second range.
+		 *
+		 * @param date partStart			:
+		 * @param date partEnd				:
+		 * @param date inStart				:
+		 * @param date inEnd				:
+		 *
+		 * @return bool : in range, or not.
+		 */
+		inrange : function( partStart, partEnd, inStart, inEnd )
+		{
+			return !( partEnd.getTime() < inStart.getTime() || partStart.getTime() > inEnd.getTime() );
+		},
+		
+		
+		/**
 		 * Called to get a resource at a given index from the settings object.
 		 *
 		 * @param int index		: A number representing the index position of the resouce data we want.
@@ -286,8 +303,9 @@
 		/**
 		 * Parse event overlaps for the given event.
 		 *
-		 * @param date begin	: The beginning of the range that we want to check for overlaps.
-		 * @param date end		: The end of the range that we want to check for overlaps.
+		 * @param date begin		: The beginning of the range that we want to check for overlaps.
+		 * @param date end			: The end of the range that we want to check for overlaps.
+		 * @param object resource	: A resource id / label object if we want to check for overlaps on resources too.
 		 *
 		 * @return void;
 		 */
@@ -689,7 +707,7 @@
 				var $event	= $(this),
 					values	= $event.data(plugin_name),
 					data	= values && values.calendar ? values.calendar.data(plugin_name) : false ;
-
+				
 				// Make sure we've got values.
 				if( data && values ){
 					
@@ -702,6 +720,9 @@
 					if( 'color' in bData )	values.colors	= bData.color ? $[plugin_name].colors.generate( bData.color ) : data.settings.defaultcolor;
 					if( 'title' in bData )	values.title	= bData.title || null;
 					if( 'notes' in bData )	values.notes	= bData.notes || '';
+					
+					// Exit if there's no need to draw anything.
+					if( values.ends < data.settings.startdate || values.begins > data.cache.enddate ) return false;
 					
 					// Work out the cached end date.
 					values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
@@ -718,7 +739,9 @@
 					
 					// Call the positioning code.
 					_private.event.position.apply($events,[speed,ease]);
+					return true;
 				}
+				return false;
 			},
 			
 			/**
@@ -1353,248 +1376,338 @@
 				delete _private.drag[e.data.i];
 			}
 		},
-		// Containing code to draw the different styles of appointment.
+		
+		// Methods to draw the different styles of appointment.
 		draw : {
 			
-			/**
-			 * Draw the calendar to the screen as a week view.
-			 *
-			 * @param object data	: The calendar data object which describes how to draw the calendar.
-			 *
-			 * @return void; 
-		 	 */
-			week : function( data ){
+			// Draw week style calendar / event
+			week : {
 				
-				// Initialise variables for the loops below.
-				var clonedTime,
-					clonedDate,
-					clonedTimeObject,
-					clonedDateObject,
-					clonedResourceLabel,
-					clonedTimeLabel,
-					clonedDateLabel,
-					clonedDateFormat,
-					todayDate = $[plugin_name].date().format('Y-m-d');
+				/**
+				 * Draw the calendar to the screen as a week view.
+				 *
+				 * @param object data	: The calendar data object which describes how to draw the calendar.
+				 *
+				 * @return void; 
+				 */
+				cal : function( data ){
 				
-				// Apply the CSS to the master element.
-				// This will automatically get cloned with the element.
-				data.elements.timeblock.css({
-					width	: '100%',
-					height	: data.cache.incrementHeight
-				});
-				
-				data.elements.timelabel.css({
-					width	: '100%',
-					height	: data.cache.incrementHeight
-				});
-				
-				// Loop through each increment to create a standard day fragment we can
-				// clone for each of the days we want to display.
-				for( var i=0, mPast, mTime; i<data.cache.incrementsInDay; i++ ){
+					// Initialise variables for the loops below.
+					var clonedTime,
+						clonedDate,
+						clonedTimeObject,
+						clonedDateObject,
+						clonedResourceLabel,
+						clonedTimeLabel,
+						clonedDateLabel,
+						clonedDateFormat,
+						todayDate = $[plugin_name].date().format('Y-m-d');
 					
-					// Clone the time object, and increment by whatever the loop counter is.
-					clonedTimeObject = data.settings.startdate.incrementBy( data.settings.gridincrement, i )
-					mTime = clonedTimeObject.format( 'H:i:s' );
-					mPast = clonedTimeObject.format( 'i' );
+					// Apply the CSS to the master element.
+					// This will automatically get cloned with the element.
+					data.elements.timeblock.css({
+						width	: '100%',
+						height	: data.cache.incrementHeight
+					});
 					
-					// Clone the time, and store the start time it represents in an attribute. 
-					clonedTime = data.elements.timeblock.clone(true);
-					clonedTime.attr( 'time', mTime );
-					clonedTime.attr( 'past', mPast );
+					data.elements.timelabel.css({
+						width	: '100%',
+						height	: data.cache.incrementHeight
+					});
 					
-					// Clone the time label, and store the time it represents as an attribute.
-					clonedTimeLabel = data.elements.timelabel.clone(true);
-					clonedTimeLabel.attr( 'time', mTime );
-					clonedTimeLabel.attr( 'past', mPast );
-					
-					// Choose the format type, depending on what's been defined.
-					if( mTime == '12:00:00' && 'noon' in data.settings.masktimelabel ){
-						clonedTimeLabel.find('p:first').html( clonedTimeObject.format( data.settings.masktimelabel['noon'] ) );
-					} else if( mPast in data.settings.masktimelabel ){
-						clonedTimeLabel.find('p:first').html( clonedTimeObject.format( data.settings.masktimelabel[mPast] ) );
+					// Loop through each increment to create a standard day fragment we can
+					// clone for each of the days we want to display.
+					for( var i=0, mPast, mTime; i<data.cache.incrementsInDay; i++ ){
+						
+						// Clone the time object, and increment by whatever the loop counter is.
+						clonedTimeObject = data.settings.startdate.incrementBy( data.settings.gridincrement, i )
+						mTime = clonedTimeObject.format( 'H:i:s' );
+						mPast = clonedTimeObject.format( 'i' );
+						
+						// Clone the time, and store the start time it represents in an attribute. 
+						clonedTime = data.elements.timeblock.clone(true);
+						clonedTime.attr( 'time', mTime );
+						clonedTime.attr( 'past', mPast );
+						
+						// Clone the time label, and store the time it represents as an attribute.
+						clonedTimeLabel = data.elements.timelabel.clone(true);
+						clonedTimeLabel.attr( 'time', mTime );
+						clonedTimeLabel.attr( 'past', mPast );
+						
+						// Choose the format type, depending on what's been defined.
+						if( mTime == '12:00:00' && 'noon' in data.settings.masktimelabel ){
+							clonedTimeLabel.find('p:first').html( clonedTimeObject.format( data.settings.masktimelabel['noon'] ) );
+						} else if( mPast in data.settings.masktimelabel ){
+							clonedTimeLabel.find('p:first').html( clonedTimeObject.format( data.settings.masktimelabel[mPast] ) );
+						}
+						
+						// Append the cloned time element into the dayblock.
+						data.elements.dayblock.append( clonedTime );
+						data.elements.timeline.append( clonedTimeLabel );
 					}
 					
-					// Append the cloned time element into the dayblock.
-					data.elements.dayblock.append( clonedTime );
-					data.elements.timeline.append( clonedTimeLabel );
-				}
-				
-				// Get the first timeblock element, and remove the border from the top.
-				data.elements.dayblock.find('div.ui-'+plugin_name+'-time:first').css('border-top','0')
-				data.elements.timeline.find('div.ui-'+plugin_name+'-label-time:first').html('');
-				
-				// Apply the CSS to the master element.
-				// This will automatically get cloned with the element.
-				data.elements.dayblock.css({
-					width	: data.cache.resourceWidth,
-					height	: data.cache.dayHeight
-				});
-				
-				data.elements.resourcelabel.css({
-					width	: data.cache.resourceWidth,
-					height	: '100%'
-				})
-				
-				data.elements.datelabel.css({
-					width	: data.cache.dayWidth,
-					height	: '100%'
-				});
-				
-				// Loop through each day, and append the dayblocks into the container.
-				for( var i=0; i<data.settings.daystodisplay; i++ ){
+					// Get the first timeblock element, and remove the border from the top.
+					data.elements.dayblock.find('div.ui-'+plugin_name+'-time:first').css('border-top','0')
+					data.elements.timeline.find('div.ui-'+plugin_name+'-label-time:first').html('');
 					
-					// Clone the time object, and increment by whatever the loop counter is.
-					clonedDateObject = data.settings.startdate.addDays(i);
-					clonedDateFormat = clonedDateObject.format('Y-m-d');
+					// Apply the CSS to the master element.
+					// This will automatically get cloned with the element.
+					data.elements.dayblock.css({
+						width	: data.cache.resourceWidth,
+						height	: data.cache.dayHeight
+					});
 					
-					for( var r=0; r<data.cache.resourcecount; r++ ){
+					data.elements.resourcelabel.css({
+						width	: data.cache.resourceWidth,
+						height	: '100%'
+					})
 					
-						// Clone the day element, and store the date it represents in an attribute.
-						clonedDate = data.elements.dayblock.clone(true)
-							.css( 'left', ( data.cache.dayWidth * i ) + ( data.cache.resourceWidth * r ) )
-							.attr({
-								'date'		: clonedDateFormat,
-								'day'		: clonedDateObject.getDay(),
-								'resource'	: _private.resource.apply(this,[r,data]).id
-							});
+					data.elements.datelabel.css({
+						width	: data.cache.dayWidth,
+						height	: '100%'
+					});
+					
+					// Loop through each day, and append the dayblocks into the container.
+					for( var i=0; i<data.settings.daystodisplay; i++ ){
 						
-						if( r<(data.cache.resourcecount-1) ) clonedDate.addClass('ui-'+plugin_name+'-resource');
-						if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today')
+						// Clone the time object, and increment by whatever the loop counter is.
+						clonedDateObject = data.settings.startdate.addDays(i);
+						clonedDateFormat = clonedDateObject.format('Y-m-d');
 						
-						// Append the cloned dayblock into the container.
-						data.elements.container.append( clonedDate );
+						for( var r=0; r<data.cache.resourcecount; r++ ){
 						
-						if( data.settings.resources ){
-							clonedResourceLabel = data.elements.resourcelabel.clone(true)
+							// Clone the day element, and store the date it represents in an attribute.
+							clonedDate = data.elements.dayblock.clone(true)
 								.css( 'left', ( data.cache.dayWidth * i ) + ( data.cache.resourceWidth * r ) )
 								.attr({
 									'date'		: clonedDateFormat,
 									'day'		: clonedDateObject.getDay(),
 									'resource'	: _private.resource.apply(this,[r,data]).id
-								})
-								.find('p')
-									.html( _private.resource.apply(this,[r,data]).name )
-								.end();
+								});
 							
-							data.elements.resourceline.append( clonedResourceLabel );
-						}
-					}
-					
-					// Clone the date label, and store the date it represents as an attribute.
-					clonedDateLabel = data.elements.datelabel.clone(true)
-						.css( 'left', data.cache.dayWidth * i )
-						.attr({
-							'date'	: clonedDateFormat,
-							'day'	: clonedDateObject.getDay(),
-						})
-						.find('p')
-							.html( clonedDateObject.format( data.settings.maskdatelabel ) )
-						.end();
-					
-					if( clonedDateFormat === todayDate ) clonedDateLabel.addClass('ui-'+plugin_name+'-today');
-					
-					// Append the cloned daylabel into the container.
-					data.elements.dateline.append( clonedDateLabel );
-					
-				}
-				
-				// Make an allocation for the scrollbars.
-				data.elements.dateline.add(data.elements.resourceline).css({right:data.cache.scrollbarSize});
-				
-				// Get $this...
-				var $this = $(this);
-				
-				$this // Construct the base HTML in this element.
-					.append( data.elements.timeline )
-					.append( data.elements.dateline )
-					.append( data.elements.datelinefill )
-					.append( data.elements.container );
-				
-				// If the user has defined resources, set those.
-				if( $.isArray( data.settings.resources ) || typeof data.settings.resources == 'object' ){
-					
-					$this // Append these elements to the DOM.
-						.append( data.elements.resourceline )
-						.append( data.elements.resourcelinefill );
-				}
-				
-				// For the purposes of this demo, we've also included a little bit of code to scroll
-				// the calendar so noon displays in the middle of the page.
-				var scrollPos = (data.cache.dayHeight/2) - (data.elements.container.height()/2) ;
-				data.elements.container.scrollTop(scrollPos);
-			},
-			
-			/**
-			 * Draw the calendar to the screen as a month view.
-			 *
-			 * @param object data	: The calendar data object which describes how to draw the calendar.
-			 *
-			 * @return void; 
-			*/
-			month : function( data ){
-				
-				var clonedMonth,
-					clonedDate,
-					clonedDateLabel,
-					clonedDateObject,
-					clonedDateFormat;
+							if( r<(data.cache.resourcecount-1) ) clonedDate.addClass('ui-'+plugin_name+'-resource');
+							if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today')
+							
+							// Append the cloned dayblock into the container.
+							data.elements.container.append( clonedDate );
+							
+							if( data.settings.resources ){
+								clonedResourceLabel = data.elements.resourcelabel.clone(true)
+									.css( 'left', ( data.cache.dayWidth * i ) + ( data.cache.resourceWidth * r ) )
+									.attr({
+										'date'		: clonedDateFormat,
+										'day'		: clonedDateObject.getDay(),
+										'resource'	: _private.resource.apply(this,[r,data]).id
+									})
+									.find('p')
+										.html( _private.resource.apply(this,[r,data]).name )
+									.end();
 								
-				data.elements.datelabel.css({
-					width	: data.cache.dayWidth,
-					height	: '100%'
-				});
-				
-				data.elements.dayblock.css({
-					width	: data.cache.dayWidth,
-					height	: data.cache.dayHeight
-				});
-				
-				for( var i=0; i<data.settings.daystodraw; i++ ){
-				
-					// Clone the time object, and increment by whatever the loop counter is.
-					clonedDateObject = data.settings.startdate.addDays(i);
-					clonedDateFormat = clonedDateObject.format('Y-m-d');
-					
-					// Clone the day element, and store the date it represents in an attribute.
-					clonedDate = data.elements.dayblock.clone(true)
-						.attr({
-							'date'	: clonedDateFormat,
-							'day'	: clonedDateObject.getDay()
-						})
-						.css({
-							'left'	: data.cache.dayWidth * (i%7),
-							'top'	: data.cache.dayHeight * Math.floor(i/7)
-						})
-						.toggleClass( 'non-month', clonedDateObject.getMonth()+1 != data.settings.startmonth )
-						.find('p')
-							.text( clonedDateObject.getDate() )
-						.end();
-					
-					// Only create labels for the first seven (number of days in week).
-					if( i<7 ){
+								data.elements.resourceline.append( clonedResourceLabel );
+							}
+						}
+						
 						// Clone the date label, and store the date it represents as an attribute.
 						clonedDateLabel = data.elements.datelabel.clone(true)
+							.css( 'left', data.cache.dayWidth * i )
 							.attr({
 								'date'	: clonedDateFormat,
-								'day'	: clonedDateObject.getDay() 
+								'day'	: clonedDateObject.getDay(),
 							})
-							.css( 'left', data.cache.dayWidth * i )
 							.find('p')
-								.html( clonedDateObject.format( data.settings.maskmonthlabel ) )
+								.html( clonedDateObject.format( data.settings.maskdatelabel ) )
 							.end();
 						
+						if( clonedDateFormat === todayDate ) clonedDateLabel.addClass('ui-'+plugin_name+'-today');
+						
+						// Append the cloned daylabel into the container.
 						data.elements.dateline.append( clonedDateLabel );
+						
 					}
 					
-					// Append the cloned dayblock into the container.
-					data.elements.container.append( clonedDate );
+					// Make an allocation for the scrollbars.
+					data.elements.dateline.add(data.elements.resourceline).css({right:data.cache.scrollbarSize});
+					
+					// Get $this...
+					var $this = $(this);
+					
+					$this // Construct the base HTML in this element.
+						.append( data.elements.timeline )
+						.append( data.elements.dateline )
+						.append( data.elements.datelinefill )
+						.append( data.elements.container );
+					
+					// If the user has defined resources, set those.
+					if( $.isArray( data.settings.resources ) || typeof data.settings.resources == 'object' ){
+						
+						$this // Append these elements to the DOM.
+							.append( data.elements.resourceline )
+							.append( data.elements.resourcelinefill );
+					}
+					
+					// For the purposes of this demo, we've also included a little bit of code to scroll
+					// the calendar so noon displays in the middle of the page.
+					var scrollPos = (data.cache.dayHeight/2) - (data.elements.container.height()/2) ;
+					data.elements.container.scrollTop(scrollPos);
+				},
+				
+				/**
+				 * Draw the event to the screen as a week display.
+				 *
+				 */
+				event : function( data, values )
+				{
+					// Cache the dates (make sure for internal purposes it doesn't extend after the last displaying date.
+					values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
+					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
+					
+					// Calculate the number of elements required to render this event.
+					// This would usually be one event per day * the number of resources this event is applied to.
+					var daysInEvent = _private.event.calculateElementCount.apply(this, [values]),
+						$event, $events;
+					
+					// Check if we've create event fragments.
+					if( !( 'elems' in values ) || values.elems.length < 1 ){
+						
+						// Store the event values against the element.
+						// If everything is in order, create the event data.
+						$event = fragments.event.clone(true);
+						
+						// Hide certain elements if some interactions aren't allowed.
+						if( !data.settings.allowremove ) $event.find('span.button-remove').hide();
+						if( !data.settings.allowresize ) $event.find('p.resize-top, p.resize-bottom').hide();
+						if( data.settings.allowmove ){
+							$event.find('pre.details').bind('selectstart.'+plugin_name,_private.prevent);
+						} else {
+							$event.unbind('mousedown.'+plugin_name,_private.drag.start);
+						}
+						
+						// Add the text straight to the event details.
+						$event.attr('data-id',values.uid);
+						$event.find('pre.details').text( values.notes );
+						$event.find('p.title').text( values.title || values.begins.format(data.settings.maskeventlabel) );
+						
+						// Start the events collection small with this element.
+						$events = $event;
+						
+					} else {
+						
+						// Get the first element, and restore default classes.
+						// Start the events collection with all the elements we've got.
+						$events = values.elems.detach();
+						
+						// Whittle the events collection down to the elements we need.
+						if( $events.length > daysInEvent ) $events.slice( 0, daysInEvent );
+						
+						// Reset the classes on the existing events, and get the first one to continue cloning if needed.
+						$event = $events.removeClass('begin end').addClass('mid').eq(0);
+					}
+					
+									
+					// Loop to create the number of elements required to render this event.
+					while( daysInEvent > $events.length ) $events = $events.add($event.clone(true));
+					
+					// Set the classes for begin and end.
+					if( data.settings.startdate <= values.begins )	$events.first().removeClass('mid').addClass('begin');
+					if( data.cache.enddate >= values.ends )			$events.last().removeClass('mid').addClass('end');
+					
+					// Only add the event to the data array, and to the DOM,
+					// if it falls within the date range.
+					data.elements.container.append($events);
+					
+					// Store the $events elements in the event data object.
+					values.elems = $events;
+					$events.data(plugin_name,values);
+					
+					// Run the positioning code.
+					_private.event.position.apply($events);
 				}
+			},
+			
+			// Draw month style calendar / event
+			month : {
 				
-				var $this = $(this);
+				/**
+				 * Draw the calendar to the screen as a month view.
+				 *
+				 * @param object data	: The calendar data object which describes how to draw the calendar.
+				 *
+				 * @return void; 
+				 */
+				cal : function( data ){
+					
+					var clonedMonth,
+						clonedDate,
+						clonedDateLabel,
+						clonedDateObject,
+						clonedDateFormat;
+									
+					data.elements.datelabel.css({
+						width	: data.cache.dayWidth,
+						height	: '100%'
+					});
+					
+					data.elements.dayblock.css({
+						width	: data.cache.dayWidth,
+						height	: data.cache.dayHeight
+					});
+					
+					for( var i=0; i<data.settings.daystodraw; i++ ){
+					
+						// Clone the time object, and increment by whatever the loop counter is.
+						clonedDateObject = data.settings.startdate.addDays(i);
+						clonedDateFormat = clonedDateObject.format('Y-m-d');
+						
+						// Clone the day element, and store the date it represents in an attribute.
+						clonedDate = data.elements.dayblock.clone(true)
+							.attr({
+								'date'	: clonedDateFormat,
+								'day'	: clonedDateObject.getDay()
+							})
+							.css({
+								'left'	: data.cache.dayWidth * (i%7),
+								'top'	: data.cache.dayHeight * Math.floor(i/7)
+							})
+							.toggleClass( 'non-month', clonedDateObject.getMonth()+1 != data.settings.startmonth )
+							.find('p')
+								.text( clonedDateObject.getDate() )
+							.end();
+						
+						// Only create labels for the first seven (number of days in week).
+						if( i<7 ){
+							// Clone the date label, and store the date it represents as an attribute.
+							clonedDateLabel = data.elements.datelabel.clone(true)
+								.attr({
+									'date'	: clonedDateFormat,
+									'day'	: clonedDateObject.getDay() 
+								})
+								.css( 'left', data.cache.dayWidth * i )
+								.find('p')
+									.html( clonedDateObject.format( data.settings.maskmonthlabel ) )
+								.end();
+							
+							data.elements.dateline.append( clonedDateLabel );
+						}
+						
+						// Append the cloned dayblock into the container.
+						data.elements.container.append( clonedDate );
+					}
+					
+					var $this = $(this);
+					
+					$this // Construct the base HTML in this element.
+						.append( data.elements.dateline )
+						.append( data.elements.container );
+				},
 				
-				$this // Construct the base HTML in this element.
-					.append( data.elements.dateline )
-					.append( data.elements.container );
+				/**
+				 * Draw the event to the screen as a week display.
+				 *
+				 */
+				event : function()
+				{
+					// Draw...
+				}
 			}
 		}
 	};
@@ -1772,7 +1885,7 @@
 							data.cache.dayHeight		= ( $this.outerHeight() - 22 ) / data.cache.weekstodraw;
 							
 							// Finally, call the draw method.
-							_private.draw.month.apply(this,[data]);
+							_private.draw.month.cal.apply(this,[data]);
 						break;
 						
 						case const_week : // Pass the data to save a call to the data API.
@@ -1808,7 +1921,7 @@
 							data.cache.dayHeight		= data.cache.incrementHeight * data.cache.incrementsInDay;
 							
 							// Finally, call the draw method.
-							_private.draw.week.apply(this,[data]);
+							_private.draw.week.cal.apply(this,[data]);
 						break;
 						
 					}
@@ -1905,17 +2018,17 @@
 			if( data ){
 				
 				// Make sure everything we need exists in bdata.
-				if( !'uid' in bData )		throw _private.errors.eventParse('Missing unique id (uid)',bData);
-				if( !'begins' in bData )	throw _private.errors.eventParse('Missing start date/time (begins)',bData);
-				if( !'ends' in bData )		throw _private.errors.eventParse('Missing end date/time (ends)',bData);
+				if( !'uid' in bData )					throw _private.errors.eventParse('Missing unique id (uid)',bData);
+				if( !'begins' in bData )				throw _private.errors.eventParse('Missing start date/time (begins)',bData);
+				if( !'ends' in bData )					throw _private.errors.eventParse('Missing end date/time (ends)',bData);
+				
+				// Make sure this UID doesn't already exist.
+				if( bData.uid in data.cache.events )	throw _private.errors.eventParse('UID must be unique', bData);
 				
 				// Parse the dates.
 				var dataBegins	= $[plugin_name].date( bData.begins ),
 					dataEnds	= $[plugin_name].date( bData.ends );
-				
-				// Discard any events we can't draw in this set.
-				if( dataEnds < data.settings.startdate || dataBegins > data.cache.enddate ) return false;
-								
+												
 				// Clone the event element, and set up the values.
 				var values	= {
 					elems		: $([]),
@@ -1940,58 +2053,16 @@
 				// For now, we just show them as minimum length.
 				if( values.resource === false )			throw _private.errors.eventParse('Invalid resource id (resource)',bData);
 				if( !(values.begins instanceof Date) )	throw _private.errors.eventParse('Invalid start date/time (begins)',bData);
-				
-				// If everything is in order, create the event data.
-				var $event = fragments.event.clone(true);
-				
-				// Hide certain elements if some interactions aren't allowed.
-				if( !data.settings.allowremove ) $event.find('span.button-remove').hide();
-				if( !data.settings.allowresize ) $event.find('p.resize-top, p.resize-bottom').hide();
-				if( data.settings.allowmove ){
-					$event.find('pre.details').bind('selectstart.'+plugin_name,_private.prevent);
-				} else {
-					$event.unbind('mousedown.'+plugin_name,_private.drag.start);
-				}
-				
-				// Add the text straight to the event details.
-				$event.attr('data-id',values.uid);
-				$event.find('pre.details').text( values.notes );
-				$event.find('p.title').text( values.title || values.begins.format(data.settings.maskeventlabel) );
-				
-				// Create a collection for multiple events.
-				var $events = $event;
-				
-				// Cache the end date (make sure for internal purposes it doesn't extend after the last displaying date.
-				values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
-				values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
-				
-				// Calculate the number of elements required to render this event.
-				// This would usually be one event per day * the number of resources this event is applied to.
-				var daysInEvent = _private.event.calculateElementCount.apply(this, [values]);
 								
-				// Loop to create the number of elements required to render this event.
-				while( daysInEvent > $events.length ) $events = $events.add($event.clone(true));
-				
-				// Set the classes for begin and end.
-				if( data.settings.startdate <= values.begins )	$events.first().removeClass('mid').addClass('begin');
-				if( data.cache.enddate >= values.ends )			$events.last().removeClass('mid').addClass('end');
-				
-				// Only add the event to the data array, and to the DOM,
-				// if it falls within the date range.
-				if( data.cache.enddate > values.begins && data.settings.startdate < values.ends ){			
-					data.elements.container.append($events);
-				}
-				
-				// Store the $events elements in the event data object.
-				values.elems = $events;
 				data.cache.events[values.uid] = values;
-				
-				// Store the event values against the element.
-				$events.data(plugin_name,values);
 				$this.data(plugin_name,data);
 				
-				// Call the positioning code.
-				_private.event.position.apply($events);
+				// Only create the events if 
+				if( _private.inrange.apply( this, [dataBegins, dataEnds, data.settings.startdate, data.cache.enddate] ) ){				
+					
+					// Call the positioning code.
+					_private.draw.week.event.apply($this,[data,values]);
+				}
 			}
 			return $this;
 		},
@@ -2106,7 +2177,6 @@
 				if( typeof value == 'undefined' ){
 					return data.settings[key];
 				} else {
-					data.settings[key] = value;
 					
 					switch( key ){
 						case 'allowremove' :
@@ -2115,6 +2185,98 @@
 						case 'allowresize' : 
 							data.elements.container.find('p.resize-top, p.resize-bottom').toggle(Boolean(value));
 						break;
+						case 'startdate' :
+							
+							var newdate = $[plugin_name].date( value, data.settings.daytimestart ),
+								olddate = data.settings.startdate;
+							
+							// Set the new date details.
+							data.settings.startdate = newdate;
+							data.cache.enddate		= newdate.addDays(data.settings.daystodisplay);
+							
+							// Save the data against the plugin.
+							$this.data(plugin_name,data);
+							
+							var event;
+							
+							// Detatch all of the events, as these elements have
+							// data stored against them... we may want to add these later.
+							for( var i in data.cache.events ){
+								
+								// Cache the event.
+								event = data.cache.events[i];
+								
+								// Check if this event is in the current range.
+								if( !_private.inrange.apply(this,[event.begins,event.ends,data.settings.startdate,data.cache.enddate]) ){
+									if( 'elems' in event && event.elems.length > 0 ){
+										// Remove this event from its container.
+										event.elems.detach();
+									}
+								} else {
+									// Redraw this element. The length and position may have changed.
+									_private.draw[data.type].event.apply($this,[data,event]);
+								}
+							}
+							
+							// This is almost the code we need... we've just got to figure out
+							// a mechanism of storing the old layouts safely where we can re-use them.
+							// We don't want to have to clone the layout again... in fact, it would be better
+							// if we didn't clone the entire layout at all. Would be much more efficient,
+							// and far less error prone to create the new layouts on the fly as we need them.
+							// Or maybe even create them one in advance (after the animation has run).
+							
+							var $dates		= data.elements.container.find('div.ui-'+plugin_name+'-date').removeClass('ui-'+plugin_name+'-today'),
+								todayDate	= $[plugin_name].date().format('Y-m-d');
+							
+							data.elements.dateline.find('div.ui-'+plugin_name+'-label-date').removeClass('ui-'+plugin_name+'-today').each(function(i,label){
+								
+								var $label				= $(label),
+									clonedDateObject	= newdate.addDays(i),
+									clonedDateFormat	= clonedDateObject.format('Y-m-d');
+								$dates.eq(i).attr({
+									'date'		: clonedDateFormat,
+									'day'		: clonedDateObject.getDay()
+								});
+								$label.attr({
+									'date'	: clonedDateFormat,
+									'day'	: clonedDateObject.getDay() 
+								})
+								.find('p')
+									.html( clonedDateObject.format( data.settings.maskdatelabel ) )
+								.end();
+								
+								if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
+							});
+							
+//							var old_container	= data.elements.container,
+//								old_dateline	= data.elements.dateline;
+//							
+//							data.elements.container = old_container.clone(true).appendTo($this);
+//							data.elements.dateline	= old_dateline.clone(true).appendTo($this);
+//														
+//							data.elements.dateline
+//								.add(data.elements.container)
+//								.css({
+//									left	: (olddate>newdate?'-':'+')+'='+old_container.width(),
+//									width	: old_container.width()
+//								})
+//							
+//							data.elements.dateline
+//								.add(data.elements.container)
+//								.add(old_container)
+//								.add(old_dateline)
+//								.animate({
+//									left : (olddate>newdate?'+':'-')+'='+data.elements.container.width()
+//								}, 'fast', data.settings.easing.datechange, function(){
+//									old_container.remove();
+//									old_dateline.remove();
+//								});
+							
+							return $this;
+							
+						break;
+						
+						default: data.settings[key] = value; break;
 					}
 					
 					return $this;
