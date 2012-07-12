@@ -4,7 +4,9 @@
  * Licensed under the MIT license.
  * http://teamdf.com/jquery-plugins/license/
  *
- * @author Sam Sehnert
+ * @author Sam Sehnert | sam@teamdf.com
+ * 
+ * Implement an extremely flexible calendar interface with minimal up front development.
  */
 
 (function($){
@@ -561,125 +563,6 @@
 		
 		// Pseudo events used by the calendar.
 		event : {
-			/**
-			 * Positions an event object on the screen according to its data object.
-			 *
-			 * @param int speed		: (opt) The speed of animation in milliseconds. If ommited, we won't animate the changes.
-			 * @param string ease	: (opt) The easing method to use. See jQuery easing documentation for details.
-			 *
-			 * @return void
-			 */
-			position : function( speed, ease, detect ){
-				/* Position an event element on the screen */
-				
-				var $events	= $(this),
-					values	= $events.data(plugin_name),
-					data	= values && values.calendar ? values.calendar.data(plugin_name) : false,
-					detect	= detect === undefined ? true : detect ;
-				
-				// Make sure we've got values.
-				if( data && values ){
-					
-					// Loop over each of the event elements and draw them.
-					$events.each(function( i, event ){
-						
-						var $event		= $(event),
-							dayBegins	= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimestart ),
-							dayEnds		= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimeend );
-						
-						// Prevent detection of overlaps if we've passed through
-						// the detect flag.
-						if( detect ){
-							
-							// Check if we were overlapping items previously.
-							var wasOverlapping = values.overlap.items;
-							
-							// Get the event overlaps for this day.
-							_private.overlaps.apply(values.calendar,[dayBegins,dayEnds,values.resource]);
-							
-							// Make sure we've got any update event values. In particular, the overlap data.
-							values = $event.data(plugin_name);
-														
-							// Redraw any items that this event is overlapping.
-							for( var uid in values.overlap.items ){
-								_private.event.position.apply( values.overlap.items[uid].elems, [false,false,false] );
-							}
-							
-							// Redraw any items that we were previously overlapping.
-							// Double check that we haven't already re-drawn this item.
-							for( var uid in wasOverlapping ){
-								if( !( uid in values.overlap.items ) ){
-									_private.event.position.apply( wasOverlapping[uid].elems, [false,false,true] );
-								}
-							}
-						}
-						
-						// Calculate the new CSS.
-						var newStylesMain = {
-							top				: i>0 ? 0 : data.cache.incrementHeight * $[plugin_name].date( values.cache.begins, data.settings.daytimestart ).getIncrementBetween( values.cache.begins, data.settings.gridincrement ),
-							left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.cache.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
-							width			: ( values.resource !== null ? data.cache.resourceWidth : data.cache.dayWidth ) - 1,
-							height			: Math.min( data.cache.dayHeight, data.cache.incrementHeight * ( i<1 ? values.begins : dayBegins ).getIncrementBetween( ( i==$events.length-1 ? values.cache.ends : dayEnds ), data.settings.gridincrement ) ),
-							backgroundColor : $event.hasClass('selected') ? values.colors.mainSelected : values.colors.mainBackground,
-							textShadow		: values.colors.mainTextShadow+' 1px 1px 1px',
-							color			: values.colors.mainText
-						}
-						
-						newStylesMain.width -= data.settings.overlapoffset*values.overlap.count;
-						newStylesMain.left  += data.settings.overlapoffset*values.overlap.inset;
-						
-						var newStylesDetails = {
-							backgroundColor	: values.colors.detailsBackground,
-							textShadow		: values.colors.detailsTextShadow+' 1px 1px 1px',
-							color			: values.colors.detailsText
-						}
-						
-						// If the event display is too small to show any meaningful details area
-						// Use the title attribute instead.
-						if( newStylesMain.height <= 15 ){
-							newStylesDetails.display = 'none';
-							$event.attr('title',values.notes||'').unbind('dblclick.'+plugin_name).bind('dblclick.'+plugin_name,_private.event.edit);
-						} else {
-							
-							newStylesDetails.display = 'block';
-							$event.removeAttr('title').unbind('dblclick.'+plugin_name);
-						}
-						
-						// Set the appointment time while dragging.
-						if( !values.title ) $event.find('p.title').text( values.begins.format(data.settings.maskeventlabel) );
-						
-						// Choose whether to animate or not.
-						if( !speed ){
-							$event.css(newStylesMain);
-							$event.find('pre.details').css(newStylesDetails);
-						} else {
-							// Animate the event.
-							$event
-								.stop(true, false)
-								.animate(newStylesMain, speed, ease || data.settings.easing.eventupdate)
-								.find('pre.details')
-									.stop(true, false)
-									.animate(newStylesDetails, speed, ease || data.settings.easing.eventupdate)
-									.css('display',newStylesDetails.display);
-	
-							// If jQuery UI isn't loaded, we need to
-							// manually set the colours, as they won't animate.
-							if( jQuery.ui === undefined ){
-								$event.css({
-									backgroundColor : newStylesMain.backgroundColor,
-									textShadow		: newStylesMain.textShadow,
-									color			: newStylesMain.color
-								});
-								$event.find('pre.details').css({
-									backgroundColor : newStylesDetails.backgroundColor,
-									textShadow		: newStylesDetails.textShadow,
-									color			: newStylesDetails.color
-								});
-							}
-						}
-					});
-				}
-			},
 			
 			/**
 			 * Returns the number of elements required to draw the event.
@@ -738,7 +621,7 @@
 					values.calendar.data(plugin_name,data);
 					
 					// Call the positioning code.
-					_private.event.position.apply($events,[speed,ease]);
+					_private.draw[data.type].position.apply($events,[speed,ease]);
 					return true;
 				}
 				return false;
@@ -762,48 +645,63 @@
 					// Exit now if we don't allow selection.
 					if( !data.settings.allownotesedit ) return;
 					
-					// Detatch the PRE element from the DOM.
-					var notes = $event.find('pre.details').detach()
+					// Set the notes base height.
+					var $notes		= $event.find('pre.details'),
+						noteHeight	= $notes.height();
 					
 					// Now append the textarea.
-					var textarea = $('<textarea class="details" />').text(values.notes||'').css({
+					var $textarea = $('<textarea class="details" />').text(values.notes||'').css({
 						boxShadow : 'inset 0px 0px 6px '+values.colors.mainShadow
-					}).appendTo($event);
+					}).on('mousedown.'+plugin_name,function(e){e.stopPropagation()}).appendTo($event);
 					
-					if( $event.height() <= 15 ){
+					if( $event.height() <= 30 ){
+						
+						// Work out the margin to use.
+						var marginSide	= $event.height() <= 15 ? 4 : 1 ,
+							marginTop	= $event.height() <= 15 ? -1 : 0 ; 
 						
 						// Unbind the double click handler while we're showing the dropdown.
 						// Also, stop (and complete) the animations on the parent, otherwise
 						// it can cause some weird animation issues.
 						$event.unbind('dblclick.'+plugin_name).stop(true,true);
-						textarea.css({
+						$textarea.css({
 							
-							left					: 3,
-							right					: 3,
-							height					: 0,
+							marginTop				: marginTop,
+							left					: marginSide,
+							right					: marginSide,
+							height					: noteHeight,
 							border					: '1px solid '+values.colors.mainSelected,
 							borderTop				: 'none',
 							borderTopLeftRadius		: 0,
 							borderTopRightRadius	: 0,
-							overflow				: 'hidden'
+							opacity					: 0,
+							overflow				: 'hidden',
+							zIndex					: 1
 							
-						}).animate({ height: 45 },'fast',data.settings.easing.eventeditin,function(){
+						}).animate({ height: 45, opacity: 1 },'fast',data.settings.easing.eventeditin,function(){
 							
 							// Make sure the body is scrollable.
 							$(this).css('overflow', 'scroll');
 							
+							// Detatch the PRE element from the DOM.
+							$notes.detach();
+							
 							// Trigger the selection now that we've done our animation.
-							_private.selectrange.apply(textarea,[values.notes.length||0,values.notes.length||0]);
+							_private.selectrange.apply($textarea,[values.notes.length||0,values.notes.length||0]);
 							
 						});
 						
 					} else {
-						_private.selectrange.apply(textarea,[values.notes.length||0,values.notes.length||0]);
+						// Detatch the PRE element from the DOM.
+						$notes.detach();
+						
+						// Trigger the text selection
+						_private.selectrange.apply($textarea,[values.notes.length||0,values.notes.length||0]);
 					}
 					
 					
 					// Add the blur handler which will set the value when done.
-					textarea.blur(function(){
+					$textarea.blur(function(){
 						
 						// Store if we've changed the notes or not.
 						var hasChanged	= values.notes != $(this).val(),
@@ -815,15 +713,17 @@
 						// Add the tittle.
 						$events.attr('title',values.notes||'')
 						
-						if( $event.height() <= 15 ){
-							$(this).animate({ height: 0 },125,data.settings.easing.eventeditout,function(){
+						if( $event.height() <= 30 ){
+							$(this).css('overflow', 'hidden');
+							$(this).animate({ height: noteHeight, opacity: 0 },125,data.settings.easing.eventeditout,function(){
 								$(this).remove();
 							});
 						} else {
 							$(this).remove();
 						}
 						
-						$events.append(notes.text(values.notes||''));
+						// Add the original notes back in.
+						$events.append($notes.text(values.notes||''));
 						$event.bind('dblclick.'+plugin_name,_private.event.edit);
 						
 						// Only bother with the callback if the notes have actually changed.
@@ -890,8 +790,8 @@
 						$events.addClass('selected');
 						
 						// The position method will also apply any color changes.
-						_private.event.position.apply($events,[speed, ease]);
-						_private.event.position.apply($old,[speed, ease]);
+						_private.draw[data.type].position.apply($events,[speed, ease]);
+						_private.draw[data.type].position.apply($old,[speed, ease]);
 					}
 				}
 			},
@@ -1197,7 +1097,7 @@
 						values.calendar.data(plugin_name,data);
 						
 						// Now, just position the event. DONT animate while dragging.
-						_private.event.position.apply(values.elems);
+						_private.draw[data.type].position.apply(values.elems);
 					}
 				}
 			},
@@ -1280,7 +1180,7 @@
 						values.calendar.data(plugin_name,data);
 						
 						// Now, just position the event. DONT animate while dragging.
-						_private.event.position.apply(values.elems);
+						_private.draw[data.type].position.apply(values.elems);
 					}
 				}
 			},
@@ -1341,7 +1241,7 @@
 					values.calendar.data(plugin_name,data);
 					
 					// Now, just position the event. DONT animate while dragging.
-					_private.event.position.apply(values.elems);
+					_private.draw[data.type].position.apply(values.elems);
 				}
 			},
 			
@@ -1620,7 +1520,127 @@
 					$events.data(plugin_name,values);
 					
 					// Run the positioning code.
-					_private.event.position.apply($events);
+					_private.draw[data.type].position.apply($events);
+				},
+				
+				/**
+				 * Positions an event object on the screen according to its data object.
+				 *
+				 * @param int speed		: (opt) The speed of animation in milliseconds. If ommited, we won't animate the changes.
+				 * @param string ease	: (opt) The easing method to use. See jQuery easing documentation for details.
+				 *
+				 * @return void
+				 */
+				position : function( speed, ease, detect ){
+					/* Position an event element on the screen */
+					
+					var $events	= $(this),
+						values	= $events.data(plugin_name),
+						data	= values && values.calendar ? values.calendar.data(plugin_name) : false,
+						detect	= detect === undefined ? true : detect ;
+					
+					// Make sure we've got values.
+					if( data && values ){
+						
+						// Loop over each of the event elements and draw them.
+						$events.each(function( i, event ){
+							
+							var $event		= $(event),
+								dayBegins	= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimestart ),
+								dayEnds		= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimeend );
+							
+							// Prevent detection of overlaps if we've passed through
+							// the detect flag.
+							if( detect ){
+								
+								// Check if we were overlapping items previously.
+								var wasOverlapping = values.overlap.items;
+								
+								// Get the event overlaps for this day.
+								_private.overlaps.apply(values.calendar,[dayBegins,dayEnds,values.resource]);
+								
+								// Make sure we've got any update event values. In particular, the overlap data.
+								values = $event.data(plugin_name);
+															
+								// Redraw any items that this event is overlapping.
+								for( var uid in values.overlap.items ){
+									_private.draw[data.type].position.apply( values.overlap.items[uid].elems, [false,false,false] );
+								}
+								
+								// Redraw any items that we were previously overlapping.
+								// Double check that we haven't already re-drawn this item.
+								for( var uid in wasOverlapping ){
+									if( !( uid in values.overlap.items ) ){
+										_private.draw[data.type].position.apply( wasOverlapping[uid].elems, [false,false,true] );
+									}
+								}
+							}
+							
+							// Calculate the new CSS.
+							var newStylesMain = {
+								top				: i>0 ? 0 : data.cache.incrementHeight * $[plugin_name].date( values.cache.begins, data.settings.daytimestart ).getIncrementBetween( values.cache.begins, data.settings.gridincrement ),
+								left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.cache.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
+								width			: ( values.resource !== null ? data.cache.resourceWidth : data.cache.dayWidth ) - 1,
+								height			: Math.min( data.cache.dayHeight, data.cache.incrementHeight * ( i<1 ? values.begins : dayBegins ).getIncrementBetween( ( i==$events.length-1 ? values.cache.ends : dayEnds ), data.settings.gridincrement ) ),
+								backgroundColor : $event.hasClass('selected') ? values.colors.mainSelected : values.colors.mainBackground,
+								textShadow		: values.colors.mainTextShadow+' 1px 1px 1px',
+								color			: values.colors.mainText
+							}
+							
+							newStylesMain.width -= data.settings.overlapoffset*values.overlap.count;
+							newStylesMain.left  += data.settings.overlapoffset*values.overlap.inset;
+							
+							var newStylesDetails = {
+								backgroundColor	: values.colors.detailsBackground,
+								textShadow		: values.colors.detailsTextShadow+' 1px 1px 1px',
+								color			: values.colors.detailsText
+							}
+							
+							// If the event display is too small to show any meaningful details area
+							// Use the title attribute instead.
+							if( newStylesMain.height <= 15 ){
+								newStylesDetails.display = 'none';
+								$event.attr('title',values.notes||'').unbind('dblclick.'+plugin_name).bind('dblclick.'+plugin_name,_private.event.edit);
+							} else {
+								
+								newStylesDetails.display = 'block';
+								$event.removeAttr('title').unbind('dblclick.'+plugin_name);
+							}
+							
+							// Set the appointment time while dragging.
+							if( !values.title ) $event.find('p.title').text( values.begins.format(data.settings.maskeventlabel) );
+							
+							// Choose whether to animate or not.
+							if( !speed ){
+								$event.css(newStylesMain);
+								$event.find('pre.details').css(newStylesDetails);
+							} else {
+								// Animate the event.
+								$event
+									.stop(true, false)
+									.animate(newStylesMain, speed, ease || data.settings.easing.eventupdate)
+									.find('pre.details')
+										.stop(true, false)
+										.animate(newStylesDetails, speed, ease || data.settings.easing.eventupdate)
+										.css('display',newStylesDetails.display);
+		
+								// If jQuery UI isn't loaded, we need to
+								// manually set the colours, as they won't animate.
+								if( jQuery.ui === undefined ){
+									$event.css({
+										backgroundColor : newStylesMain.backgroundColor,
+										textShadow		: newStylesMain.textShadow,
+										color			: newStylesMain.color
+									});
+									$event.find('pre.details').css({
+										backgroundColor : newStylesDetails.backgroundColor,
+										textShadow		: newStylesDetails.textShadow,
+										color			: newStylesDetails.color
+									});
+								}
+							}
+						});
+					}
 				}
 			},
 			
@@ -1729,6 +1749,7 @@
 				'<p class="resize-bottom" />',
 			'</div>'
 		].join(''))
+			.bind('selectstart.'+plugin_name,_private.prevent)
 			.bind('mousedown.'+plugin_name,_private.event.select)
 			.bind('mousedown.'+plugin_name,_private.drag.start)
 			.find('p.resize-top, p.resize-bottom').bind('mousedown.'+plugin_name,_private.drag.start).end()
@@ -2061,7 +2082,7 @@
 				if( _private.inrange.apply( this, [dataBegins, dataEnds, data.settings.startdate, data.cache.enddate] ) ){				
 					
 					// Call the positioning code.
-					_private.draw.week.event.apply($this,[data,values]);
+					_private.draw[data.type].event.apply($this,[data,values]);
 				}
 			}
 			return $this;
@@ -2218,25 +2239,28 @@
 								}
 							}
 							
-							// This is almost the code we need... we've just got to figure out
-							// a mechanism of storing the old layouts safely where we can re-use them.
-							// We don't want to have to clone the layout again... in fact, it would be better
-							// if we didn't clone the entire layout at all. Would be much more efficient,
-							// and far less error prone to create the new layouts on the fly as we need them.
-							// Or maybe even create them one in advance (after the animation has run).
+							/** TODO: This is WEEKVIEW only code... do we need to abstract this out to a new method?? **/
 							
+							// Modify the date attributes stored on each of the dayblocks and labels.
+							// 
 							var $dates		= data.elements.container.find('div.ui-'+plugin_name+'-date').removeClass('ui-'+plugin_name+'-today'),
 								todayDate	= $[plugin_name].date().format('Y-m-d');
 							
+							// Loop over each of the dateline elements.
 							data.elements.dateline.find('div.ui-'+plugin_name+'-label-date').removeClass('ui-'+plugin_name+'-today').each(function(i,label){
 								
+								// Get a shortcut to the label, and create the new date objects.
 								var $label				= $(label),
 									clonedDateObject	= newdate.addDays(i),
 									clonedDateFormat	= clonedDateObject.format('Y-m-d');
+								
+								// Set the dayblock's date attribute
 								$dates.eq(i).attr({
 									'date'		: clonedDateFormat,
 									'day'		: clonedDateObject.getDay()
 								});
+								
+								// Set the labels date attribute.
 								$label.attr({
 									'date'	: clonedDateFormat,
 									'day'	: clonedDateObject.getDay() 
@@ -2245,8 +2269,19 @@
 									.html( clonedDateObject.format( data.settings.maskdatelabel ) )
 								.end();
 								
+								// Make sure we add the 'today' class to the calendar.
 								if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
 							});
+							
+							/**
+							 * TODO:
+							 * This is almost the code we need... we've just got to figure out
+							 * a mechanism of storing the old layouts safely where we can re-use them.
+							 * We don't want to have to clone the layout again... in fact, it would be better
+							 * if we didn't clone the entire layout at all. Would be much more efficient,
+							 * and far less error prone to create the new layouts on the fly as we need them.
+							 * Or maybe even create them one in advance (after the animation has run).
+							 */
 							
 //							var old_container	= data.elements.container,
 //								old_dateline	= data.elements.dateline;
