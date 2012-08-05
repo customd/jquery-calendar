@@ -7,10 +7,12 @@
  * @return array : An array of randomly generated event objects for
  *				 :  use in the calendar.
  */
-function randomEvents( min, max, uidsuffix )
+function randomEvents( min, max, uidsuffix, daysbefore, daysafter )
 {
 	if( !min ) min = 50;
 	if( !max ) max = 800;
+	if( !daysbefore )	daysbefore = -21;
+	if( !daysafter )	daysafter  = 21;
 	if( !uidsuffix ) uidsuffix = '';
 	
 	var mins		= ['00','15','30','45'];
@@ -37,7 +39,7 @@ function randomEvents( min, max, uidsuffix )
 	
 	for( var e=0; e<randomBetween(min,max); e++ ){
 		
-		dayadd		= randomBetween(-21,21);
+		dayadd		= randomBetween(daysbefore,daysafter);
 		hour		= randomBetween(3,20);
 		begins		= $.cal.date().addDays(dayadd).format('Y-m-d')+' '+( hour < 10 ? '0'+hour : hour )+':'+randomFrom(mins)+':00';
 		

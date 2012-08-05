@@ -49,7 +49,7 @@ $(function(){
 	/**
 	 * Set the initial header value.
 	 */
-	$('#date_head').text( formatRange( $calendar.cal( 'option', 'startdate' ), $calendar.cal( 'option', 'startdate' ).addDays( $calendar.cal('option','daystodisplay')-1 ) ) );
+	$('#date_head').dateRange( $calendar.cal( 'option', 'startdate' ), $calendar.cal( 'option', 'startdate' ).addDays( $calendar.cal('option','daystodisplay')-1 ) );
 	
 	/**
 	 * Button click handler. 
@@ -78,44 +78,89 @@ $(function(){
 			case 'today'	:
 			case 'next'		:
 				
-				var starting = $calendar.cal('option','startdate'),
+				var today	 = $.cal.date(),
+					starting = $calendar.cal('option','startdate'),
 					duration = $calendar.cal('option','daystodisplay'),
 					newstart = starting,
 					newend;
 				
 				switch( action ){	
-					case 'next' : newstart = starting.addDays(duration); break;
-					case 'prev'	: newstart = starting.addDays(0-duration); break;
+					case 'next' : newstart = starting.addDays(duration); $('button[name="today"]').parent().removeClass('on'); break;
+					case 'prev'	: newstart = starting.addDays(0-duration); $('button[name="today"]').parent().removeClass('on'); break;
 					case 'today': newstart = $.cal.date().addDays(1-$.cal.date().format('N')); break;
-					case 'next' : newstart = $.cal.date().addDays($.cal.date().format('N')-1)
 				}
 				
 				// Work out the new end date.
 				newend = newstart.addDays(duration-1);
-				
+				 
 				// Set the new startdate.
 				$calendar.cal( 'option','startdate', newstart );
 				
+				if( today >= newstart && today <= newend ) $('button[name="today"]').parent().addClass('on');
+				
 				// Set the new date in the header.
-				$('#date_head').text( formatRange( newstart, newend ) )
+				$('#date_head').dateRange( newstart, newend )
 			break;
 		}
-		
 	});
 });
 
-function formatRange( start, end )
-{
-	var sameMonth	= 'jS',
-		sameYear	= 'jS M',
-		diffDays	= start.format('Ymd') != end.format('Ymd'),
-		diffMonths	= diffDays ? start.format('Ym') != end.format('Ym') : false,
-		diffYears	= diffMonths ? start.format('Y') != end.format('Y') : false,
-		fullFormat	= 'jS M Y',
-		startFormat	= diffYears || !diffDays ? fullFormat : ( diffMonths ? sameYear : sameMonth ),
-		separator	= ' - ';
-	return start.format(startFormat)+( diffDays ? separator+end.format(fullFormat) : '' );
-}
+/**
+ * jQuery dateRange plugin 1.0.0
+ * Copyright 2012, Digital Fusion
+ * Licensed under the MIT license.
+ * http://teamdf.com/jquery-plugins/license/
+ *
+ * @author		: Sam Sehnert | sam@teamdf.com
+ * @dependancy 	: http://github.com/teamdf/jquery-calendar/ ($.cal.date)
+ *
+ * Formats and displays a minimal text representation of a date range.
+ */
+(function($){
+	
+	// The plugin name. Override if you find namespace collisions.
+	var plugin_name = 'dateRange';
+	
+	// Set the plugin defaults.
+	var defaults = {
+		month		: 'jS',
+		year		: 'jS M',
+		full		: 'jS M Y',
+		separator	: ' - '
+	}
+	
+	/**
+	 * The plugin function which does the date formatting magic.
+	 *
+	 * @param mixed start			: The start of the range. A date object, or a parseable date string.
+	 * @param mixed end				: The end of the range. A date object, or a parseable date string.
+	 * @param object options		: An object containing settings (date formats to print under different conditions).
+	 * 
+	 * @return jQuery Collection;
+	 */
+	$.fn[plugin_name] = function( start, end, options ){
+		
+		// Settings to the defaults.
+		var settings = $.extend({},defaults);
+		
+		// Make sure these are extended date objects.
+		start	= $.cal.date(start);
+		end		= $.cal.date(end);
+		
+		// If options exist, lets merge them
+		// with our default settings.
+		if( options ) $.extend( settings, options )
+		
+		var diffDays	= start.format('Ymd') != end.format('Ymd'),
+			diffMonths	= diffDays ? start.format('Ym') != end.format('Ym') : false,
+			diffYears	= diffMonths ? start.format('Y') != end.format('Y') : false,
+			startFormat	= diffYears || !diffDays ? settings.full : ( diffMonths ? settings.year : settings.month );
+		
+		// Return the formatted date.
+		return this.text(start.format(startFormat)+( diffDays ? settings.separator+end.format(settings.full) : '' ));
+	}
+	
+})(jQuery);
 
 </script>
 
@@ -132,7 +177,7 @@ function formatRange( start, end )
 	<h1 id="date_head"></h1>
 	<ol id="nav">
 		<li><button name="prev">Previous</button></li>
-		<li><button name="today">Today</button></li>
+		<li class="on"><button name="today">Today</button></li>
 		<li><button name="next">Next</button></li>
 	</ol>
 </div>

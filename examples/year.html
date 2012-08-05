@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Calendar - Month Test</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+<script type="text/javascript" src="../jquery.calendar.js"></script>
+<link rel="stylesheet" media="screen" href="../jquery.calendar.css"/>
+
+<script type="text/javascript">
+$(function(){
+	
+	$('#calendar').cal({
+		
+		monthstodisplay	: 12,
+		
+		allowresize		: true,
+		allowmove		: true,
+		allowselect		: true,
+		allowremove		: true,
+		allownotesedit	: true,
+		
+		maskmonthlabel	: 'D',
+		
+		eventselect : function( uid ){
+			console.log( 'Selected event: '+uid );
+		},
+		
+		eventremove : function( uid ){
+			console.log( 'Removed event: '+uid );
+		},
+		
+		
+		eventnotesedit : function( uid ){
+			console.log( 'Edited Notes for event: '+uid );
+		},
+		
+		events : [
+			{
+				uid		: 1,
+				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 10:10:00',
+				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 12:00:00',
+				title	: 'Done',
+				color	: '#dddddd'
+			},
+			{
+				uid		: 2,
+				begins	: $.cal.date().addDays(2).format('Y-m-d')+' 12:15:00',
+				ends	: $.cal.date().addDays(2).format('Y-m-d')+' 13:45:00',
+				notes	: 'Keepin\' it real…\n\nMan.'
+			},
+			{
+				uid		: 3,
+				begins	: $.cal.date().addDays(3).format('Y-m-d')+' 14:15:00',
+				ends	: $.cal.date().addDays(3).format('Y-m-d')+' 16:30:00',
+				notes	: 'An <example> event…'
+			},
+			{
+				uid		: 4,
+				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 11:30:00',
+				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
+				color	: '#990066',
+				notes	: 'The big game'
+			},
+			{
+				uid		: 5,
+				begins	: $.cal.date().addDays(4).format('Y-m-d')+' 12:30:00',
+				ends	: $.cal.date().addDays(4).format('Y-m-d')+' 12:45:00',
+				notes	: 'Good-O'
+			}
+		]
+		
+	});
+	
+});
+</script>
+
+<style type="text/css">
+html,body{
+font-family: sans-serif;
+font-size: 10px;
+}
+#calendar{
+position: absolute;
+top: 50px;
+left: 50px;
+right: 50px;
+bottom: 50px;
+border: 1px solid #ccc;
+}
+</style>
+
+</head>
+
+<body>
+<div id="calendar"></div>
+</body>
+
+</html>

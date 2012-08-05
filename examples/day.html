@@ -12,7 +12,7 @@
 <script type="text/javascript">
 $(function(){
 	
-	$('#calendar').cal({
+	$calendar = $('#calendar').cal({
 		
 		daystodisplay	: 1,
 		
@@ -72,6 +72,59 @@ $(function(){
 		
 	});
 	
+	/**
+	 * Set the initial header value.
+	 */
+	$('#date_head').text( $calendar.cal( 'option', 'startdate' ).format('jS M Y') );
+	
+	/**
+	 * Button click handler. 
+	 *
+	 * TODO: Turn this into a drop-in module for calendars once we've got the capability to 
+	 * 		 toggle calendar views without reloading. Include 'formatRange' method.
+	 */
+	$('#controls').on('click','button[name]',function(){
+		
+		var $this = $(this), action = $this.attr('name');
+		
+		// If this is already the current state, just exit.
+		if( $this.is('.on') ) return;
+		
+		// Switch to the new state.
+		switch( action ) {
+			
+			/** 
+			 * TODO: For now... ideally you'd be able to toggle between views without reloading.
+			 */
+			case 'week'		: window.location = 'week.html'; break;
+			case 'year'		: window.location = 'year.html'; break;
+			case 'month'	: window.location = 'month.html'; break;
+			
+			case 'prev'		:
+			case 'today'	:
+			case 'next'		:
+				
+				var today	 = $.cal.date(),
+					starting = $calendar.cal('option','startdate'),
+					duration = $calendar.cal('option','daystodisplay'),
+					newstart = starting;
+				
+				switch( action ){	
+					case 'next' : newstart = starting.addDays(1); $('button[name="today"]').parent().removeClass('on'); break;
+					case 'prev'	: newstart = starting.addDays(-1); $('button[name="today"]').parent().removeClass('on'); break;
+					case 'today': newstart = $.cal.date(); break;
+				}
+				
+				// Set the new startdate.
+				$calendar.cal( 'option','startdate', newstart );
+				
+				if( today.format('Ymd') == newstart.format('Ymd') ) $('button[name="today"]').parent().addClass('on');
+				
+				// Set the new date in the header.
+				$('#date_head').text( newstart.format('jS M Y') )
+			break;
+		}
+	});
 });
 </script>
 
@@ -80,18 +133,117 @@ html,body{
 font-family: sans-serif;
 font-size: 10px;
 }
+
+/**
+ * Hide date-line.
+ */
+.ui-cal-week .ui-cal-timeline, .ui-cal-week .ui-cal-wrapper{ top: 0; }
+.ui-cal-week .ui-cal-dateline, .ui-cal-week .ui-cal-dateline-fill{ display: none; }
+
 #calendar{
 position: absolute;
-top: 50px;
+top: 75px;
 left: 50px;
 right: 50px;
 bottom: 50px;
+border: 1px solid #bbb;
+}
+
+#date_head{
+position: absolute;
+right: 200px;
+margin: auto;
+text-align: center;
+left: 200px;
+}
+
+#controls{
+position: absolute;
+top: 30px;
+height: 23px;
+left: 50px;
+right: 50px;
+margin: 0;
+padding: 0;
+}
+
+#controls ol{
+list-style-type: none;
+margin: 0;
+padding: 0;
+border: 1px solid #B3B3B3;
+border-radius: 2px;
+overflow: hidden;
+-moz-background-clip: padding;     /* Firefox 3.6 */
+-webkit-background-clip: padding;  /* Safari 4? Chrome 6? */
+background-clip: padding-box;      /* Firefox 4, Safari 5, Opera 10, IE 9 */
+height: 21px;
+}
+
+#controls ol li{
+display: inline-block;
+float: left;
+height: 100%;
+padding: 0;
+margin: 0;
+border: 0;
+background: #CACACA url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAUCAYAAABMDlehAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADlJREFUeNp0y6sNACAAxNALBs0ArM9QbMEnJKiD4jEvNZXtEiRVEBg2LJgwoEN7pbtlSBBBX44AAwARiCdWebcYiAAAAABJRU5ErkJggg==) repeat-x 0 0; /* Old browsers */
+text-shadow: rgba(255, 255, 255, 0.5) 0px 1px 0px;
+color: #333;
+}
+
+#controls ol li:hover{
+background-color: #C0C0C0;
+color: #000;
+}
+
+#controls ol li.on{
+background: #C4C4C4;
+color: #555;
+}
+
+#controls ol li button{
+margin: 0;
+background: transparent;
+border: 0;
+border-left: 1px solid #B3B3B3;
+height: 100%;
+padding: 0 10px;
+color: inherit;
+text-shadow: inherit;
+cursor: pointer;
+}
+
+#controls ol li:first-child button{
+border-left: 0;
+}
+
+#cals{
+float: left;
+}
+
+#nav{
+float: right;
 }
 </style>
 
 </head>
 
 <body>
+<div id="controls">
+	<ol id="cals">
+		<li class="on"><button name="day">Day</button></li>
+		<li><button name="week">Week</button></li>
+		<li><button name="month">Month</button></li>
+		<li><button name="year">Year</button></li>
+	</ol>
+	<h1 id="date_head"></h1>
+	<ol id="nav">
+		<li><button name="prev">Previous</button></li>
+		<li class="on"><button name="today">Today</button></li>
+		<li><button name="next">Next</button></li>
+	</ol>
+</div>
 <div id="calendar"></div>
 </body>
 
