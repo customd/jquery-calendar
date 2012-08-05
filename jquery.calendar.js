@@ -1215,33 +1215,42 @@
 					
 				} else if( drag.started ){
 					
-					// Calculate the drag movement in drag increment.
-					var incrementMovement	= Math.round( drag.incY / data.cache.dragHeight );
-					var dayMovement			= Math.round( drag.incX / data.cache.dayWidth );
-					
-					// Check the movement. Don't go any further if there isn't any.
-					if( incrementMovement === 0 && dayMovement === 0 ) return true;
-					
-					// Increment by the day.
-					var testTimeB	= drag.bTime.addDays( 0-dayMovement ).incrementBy( data.settings.dragincrement, 0-incrementMovement );
-					var testTimeE	= drag.eTime.addDays( 0-dayMovement ).incrementBy( data.settings.dragincrement, 0-incrementMovement );
-					
-					// We've incremented our date, so remove this from the increment counter.
-					drag.incY -= (incrementMovement*data.cache.dragHeight);
-					drag.incX -= (dayMovement*data.cache.dayWidth);
-					
-					values.begins	= drag.bTime = testTimeB;
-					values.ends		= drag.eTime = testTimeE;
-					values.cache.ends = ( data.cache.enddate < testTimeE ? data.cache.enddate.addSeconds(-1) : testTimeE );
-					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
-					
-					// Store the new event time to the element.
-					$event.data(plugin_name,values);
-					data.cache.events[values.uid] = values;
-					values.calendar.data(plugin_name,data);
-					
-					// Now, just position the event. DONT animate while dragging.
-					_private.draw[data.type].position.apply(values.elems);
+					switch( data.type ){
+						
+						case const_week : 
+							// Calculate the drag movement in drag increment.
+							var incrementMovement	= Math.round( drag.incY / data.cache.dragHeight );
+							var dayMovement			= Math.round( drag.incX / data.cache.dayWidth );
+							
+							// Check the movement. Don't go any further if there isn't any.
+							if( incrementMovement === 0 && dayMovement === 0 ) return true;
+							
+							// Increment by the day.
+							var testTimeB	= drag.bTime.addDays( 0-dayMovement ).incrementBy( data.settings.dragincrement, 0-incrementMovement );
+							var testTimeE	= drag.eTime.addDays( 0-dayMovement ).incrementBy( data.settings.dragincrement, 0-incrementMovement );
+							
+							// We've incremented our date, so remove this from the increment counter.
+							drag.incY -= (incrementMovement*data.cache.dragHeight);
+							drag.incX -= (dayMovement*data.cache.dayWidth);
+							
+							values.begins	= drag.bTime = testTimeB;
+							values.ends		= drag.eTime = testTimeE;
+							values.cache.ends = ( data.cache.enddate < testTimeE ? data.cache.enddate.addSeconds(-1) : testTimeE );
+							values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
+							
+							// Store the new event time to the element.
+							$event.data(plugin_name,values);
+							data.cache.events[values.uid] = values;
+							values.calendar.data(plugin_name,data);
+							
+							// Now, just position the event. DONT animate while dragging.
+							_private.draw[data.type].position.apply(values.elems);
+						break;
+						
+						case const_month :
+							$event.css({ left : '-='+drag.deltaX, top : '-='+drag.deltaY });
+						break;
+					}
 				}
 			},
 			
@@ -1274,6 +1283,9 @@
 				
 				// Clean up the temporary drag storage object.
 				delete _private.drag[e.data.i];
+				
+				// Redraw one last time.
+				_private.draw[data.type].position.apply(values.elems);
 			}
 		},
 		
@@ -1660,8 +1672,9 @@
 						clonedDate,
 						clonedDateLabel,
 						clonedDateObject,
-						clonedDateFormat;
-									
+						clonedDateFormat,
+						todayDate = $[plugin_name].date().format('Y-m-d');
+						
 					data.elements.datelabel.css({
 						width	: data.cache.dayWidth,
 						height	: '100%'
@@ -1692,6 +1705,8 @@
 							.find('p')
 								.text( clonedDateObject.getDate() )
 							.end();
+						
+						if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today');
 						
 						// Only create labels for the first seven (number of days in week).
 						if( i<7 ){
@@ -1724,9 +1739,153 @@
 				 * Draw the event to the screen as a week display.
 				 *
 				 */
-				event : function()
+				event : function( data, values )
 				{
-					// Draw...
+					// Cache the dates (make sure for internal purposes it doesn't extend after the last displaying date.
+					values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
+					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
+					
+					// Calculate the number of elements required to render this event.
+					// This would usually be one event per day * the number of resources this event is applied to.
+					var daysInEvent = _private.event.calculateElementCount.apply(this, [values]),
+						$event, $events;
+					
+					// Check if we've create event fragments.
+					if( !( 'elems' in values ) || values.elems.length < 1 ){
+						
+						// Store the event values against the element.
+						// If everything is in order, create the event data.
+						$event = fragments.event.clone(true);
+						
+						// Hide certain elements if some interactions aren't allowed.
+						if( !data.settings.allowremove )	$event.find('span.button-remove').hide();
+						if( !data.settings.allowmove )		$event.unbind('mousedown.'+plugin_name,_private.drag.start);
+						
+						// Add the text straight to the event details.
+						$event.find('p.resize-top, p.resize-bottom').hide();
+						$event.attr('data-id',values.uid);
+						$event.find('pre.details').text( values.notes );
+						$event.find('p.title').text( '● ' + ( values.title || values.begins.format(data.settings.maskeventlabel) ) );
+						$event.attr('title',values.notes||'').unbind('dblclick.'+plugin_name).bind('dblclick.'+plugin_name,_private.event.edit);
+						
+						// Start the events collection small with this element.
+						$events = $event;
+						
+					} else {
+						
+						// Get the first element, and restore default classes.
+						// Start the events collection with all the elements we've got.
+						$events = values.elems.detach();
+						
+						// Whittle the events collection down to the elements we need.
+						if( $events.length > daysInEvent ) $events.slice( 0, daysInEvent );
+						
+						// Reset the classes on the existing events, and get the first one to continue cloning if needed.
+						$event = $events.removeClass('begin end').addClass('mid').eq(0);
+					}
+					
+					// Loop to create the number of elements required to render this event.
+					while( daysInEvent > $events.length ) $events = $events.add($event.clone(true));
+					
+					// Set the classes for begin and end.
+					if( data.settings.startdate <= values.begins )	$events.first().removeClass('mid').addClass('begin');
+					if( data.cache.enddate >= values.ends )			$events.last().removeClass('mid').addClass('end');
+					
+					// Only add the event to the data array, and to the DOM,
+					// if it falls within the date range.
+					data.elements.container.append($events);
+					
+					// Store the $events elements in the event data object.
+					values.elems = $events;
+					$events.data(plugin_name,values);
+					
+					// Run the positioning code.
+					_private.draw[data.type].position.apply($events);
+				},
+						
+				/**
+				 * Positions an event object on the screen according to its data object.
+				 *
+				 * @param int speed		: (opt) The speed of animation in milliseconds. If ommited, we won't animate the changes.
+				 * @param string ease	: (opt) The easing method to use. See jQuery easing documentation for details.
+				 *
+				 * @return void
+				 */
+				position : function( speed, ease, detect ){
+					/* Position an event element on the screen */
+					
+					var $events	= $(this),
+						values	= $events.data(plugin_name),
+						data	= values && values.calendar ? values.calendar.data(plugin_name) : false,
+						detect	= detect === undefined ? true : detect ;
+					
+					// Make sure we've got values.
+					if( data && values ){
+						
+						// Loop over each of the event elements and draw them.
+						$events.each(function( i, event ){
+							
+							var $event = $(event), selected = $event.hasClass('selected'), spanning = $events.length > 1;
+							
+							// Calculate the new CSS.
+							var newStylesMain = {
+								top				: data.cache.dayHeight * Math.floor((values.begins.addDays(i).getDate()-1)/7) + 2 + 18,
+								left			: ( data.cache.dayWidth * ((values.begins.addDays(i).getDate()-1)%7) ) + ( i > 0 ? 0 : 2 ),
+								width			: data.cache.dayWidth - ( spanning && i==0 ? 2 : 4 ),
+								height			: data.cache.incrementHeight,
+								backgroundColor : selected ? values.colors.mainSelected : 'transparent' ,
+								textShadow		: selected ? values.colors.mainTextShadow+' 1px 1px 1px' : 'none' ,
+								color			: selected ? values.colors.mainText : values.colors.mainBackground
+							}
+							
+							// Re-set the notes attribute on this event.
+							$event.attr('title',values.notes||'');
+							
+							if( selected ){
+								if( event.style.removeAttribute ){
+									event.style.removeAttribute('background-image');
+								} else {
+									event.style.removeProperty('background-image');
+								}
+								$event.find('span.button-remove').show();
+								
+								if( spanning && i==0 ){
+									$event.find('span.button-remove').hide();
+								}
+								if( i > 0 ){
+									$event.find('p.title').hide();
+								}
+								
+							} else {
+								event.style.backgroundImage = 'none';
+								$event.find('span.button-remove').hide()
+								if( i > 0 ){
+									$event.find('p.title').show();
+								}
+							}
+									
+							// Choose whether to animate or not.
+							if( !speed ){
+								$event.css(newStylesMain).find('pre.details').hide();
+							} else {
+								// Animate the event.
+								$event
+									.stop(true, false)
+									.animate(newStylesMain, speed, ease || data.settings.easing.eventupdate)
+									.find('pre.details').hide();
+		
+								// If jQuery UI isn't loaded, we need to
+								// manually set the colours, as they won't animate.
+								if( jQuery.ui === undefined ){
+									$event.css({
+										backgroundColor : newStylesMain.backgroundColor,
+										textShadow		: newStylesMain.textShadow,
+										color			: newStylesMain.color
+									});
+								}
+							}
+						});
+					}
 				}
 			}
 		}
@@ -2243,35 +2402,74 @@
 							
 							// Modify the date attributes stored on each of the dayblocks and labels.
 							// 
-							var $dates		= data.elements.container.find('div.ui-'+plugin_name+'-date').removeClass('ui-'+plugin_name+'-today'),
+							var $dates		= $('div.ui-'+plugin_name+'-date',data.elements.container).removeClass('ui-'+plugin_name+'-today'),
 								todayDate	= $[plugin_name].date().format('Y-m-d');
 							
-							// Loop over each of the dateline elements.
-							data.elements.dateline.find('div.ui-'+plugin_name+'-label-date').removeClass('ui-'+plugin_name+'-today').each(function(i,label){
+							switch( data.type ) {
 								
-								// Get a shortcut to the label, and create the new date objects.
-								var $label				= $(label),
-									clonedDateObject	= newdate.addDays(i),
-									clonedDateFormat	= clonedDateObject.format('Y-m-d');
+								/**
+								 * Different method for days.
+								 */
+								case const_month :
+									
+									// Loop over each of the dateline elements.
+									$(data.elements.dayblock).removeClass('ui-'+plugin_name+'-today').each(function(i,date){
+										
+										// Get a shortcut to the label, and create the new date objects.
+										var $date				= $(date),
+											clonedDateObject	= newdate.addDays(i),
+											clonedDateFormat	= clonedDateObject.format('Y-m-d');
+										
+										// Set the dayblock's date attribute
+										$date.attr({
+											'date'		: clonedDateFormat,
+											'day'		: clonedDateObject.getDay()
+										})
+										
+										.find('p')
+											.html( clonedDateObject.format( 'j' ) )
+										.end();
+										
+										// Make sure we add the 'today' class to the calendar.
+										if( clonedDateFormat === todayDate ) $date.addClass('ui-'+plugin_name+'-today');
+									});
+									
+								break;
 								
-								// Set the dayblock's date attribute
-								$dates.eq(i).attr({
-									'date'		: clonedDateFormat,
-									'day'		: clonedDateObject.getDay()
-								});
+								/**
+								 * Different method for weeks.
+								 */
+								case const_week :
+									
+									// Loop over each of the dateline elements.
+									$('div.ui-'+plugin_name+'-label-date',data.elements.dateline).removeClass('ui-'+plugin_name+'-today').each(function(i,label){
+										
+										// Get a shortcut to the label, and create the new date objects.
+										var $label				= $(label),
+											clonedDateObject	= newdate.addDays(i),
+											clonedDateFormat	= clonedDateObject.format('Y-m-d');
+										
+										// Set the dayblock's date attribute
+										$dates.eq(i).attr({
+											'date'		: clonedDateFormat,
+											'day'		: clonedDateObject.getDay()
+										});
+										
+										// Set the labels date attribute.
+										$label.attr({
+											'date'	: clonedDateFormat,
+											'day'	: clonedDateObject.getDay() 
+										})
+										.find('p')
+											.html( clonedDateObject.format( data.settings.maskdatelabel ) )
+										.end();
+										
+										// Make sure we add the 'today' class to the calendar.
+										if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
+									});
+								break;
 								
-								// Set the labels date attribute.
-								$label.attr({
-									'date'	: clonedDateFormat,
-									'day'	: clonedDateObject.getDay() 
-								})
-								.find('p')
-									.html( clonedDateObject.format( data.settings.maskdatelabel ) )
-								.end();
-								
-								// Make sure we add the 'today' class to the calendar.
-								if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
-							});
+							}
 							
 							/**
 							 * TODO:

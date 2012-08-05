@@ -1,9 +1,10 @@
 /**
- * jQuery timepicker plug-in 1.0.0
+ * jQuery calendar plug-in 1.0.0
  * Copyright 2012, Digital Fusion
  * Licensed under the MIT license.
  * http://teamdf.com/jquery-plugins/license/
  *
+ * @docs http://teamdf.com/jquery-plugins/calendar/
  * @author Sam Sehnert
  */
 
@@ -204,7 +205,7 @@ box-sizing: border-box;
 border-top: 1px solid #D1D3D8;
 }
 
-.ui-cal .ui-cal-event{
+.ui-cal .ui-cal-event, .ui-cal-month .ui-cal-event.selected{
 position: absolute;
 font-size: 1em;
 background: transparent repeat-x 0 -3px;
@@ -214,23 +215,41 @@ cursor: pointer;
 transition: box-shadow 0.2s ease-in-out;
 }
 
-.ui-cal .ui-cal-event.begin{
--webkit-border-top-right-radius: 5px;
--moz-border-radius-topright: 5px;
-border-top-right-radius: 5px;
--webkit-border-top-left-radius: 5px;
--moz-border-radius-topleft: 5px;
-border-top-left-radius: 5px;
+.ui-cal-week .ui-cal-event.begin{
+-webkit-border-top-right-radius: 6px;
+-moz-border-radius-topright: 6px;
+border-top-right-radius: 6px;
+-webkit-border-top-left-radius: 6px;
+-moz-border-radius-topleft: 6px;
+border-top-left-radius: 6px;
 }
 
-.ui-cal .ui-cal-event.end,
+.ui-cal-week .ui-cal-event.end,
 .ui-cal .ui-cal-event.end .details{
--webkit-border-bottom-right-radius: 5px;
--moz-border-radius-bottomright: 5px;
-border-bottom-right-radius: 5px;
--webkit-border-bottom-left-radius: 5px;
--moz-border-radius-bottomleft: 5px;
+-webkit-border-bottom-right-radius: 6px;
+-moz-border-radius-bottomright: 6px;
+border-bottom-right-radius: 6px;
+-webkit-border-bottom-left-radius: 6px;
+-moz-border-radius-bottomleft: 6px;
 border-bottom-left-radius: 5px;
+}
+
+.ui-cal-month .ui-cal-event.begin{
+-webkit-border-bottom-left-radius: 6px;
+-moz-border-radius-bottomleft: 6px;
+border-bottom-left-radius: 5px;
+-webkit-border-top-left-radius: 6px;
+-moz-border-radius-topleft: 6px;
+border-top-left-radius: 6px;
+}
+
+.ui-cal-month .ui-cal-event.end{
+-webkit-border-bottom-right-radius: 6px;
+-moz-border-radius-bottomright: 6px;
+border-bottom-right-radius: 6px;
+-webkit-border-top-right-radius: 6px;
+-moz-border-radius-topright: 6px;
+border-top-right-radius: 6px;
 }
 
 .ui-cal .ui-cal-event.selected{
@@ -243,14 +262,20 @@ box-shadow: 1px 0px 30px rgba( 80, 80, 80, 0.5 ); /* CSS3 */
 cursor: pointer;
 }
 
-.ui-cal-week .ui-cal-event .details{
+.ui-cal-month .ui-cal-event{
+-webkit-transition: -webkit-box-shadow 0s linear;
+-moz-transition: -moz-box-shadow 0s linear;
+transition: box-shadow 0s linear;
+}
+
+.ui-cal .ui-cal-event .details{
 /* Style for appointment details section */
 position: absolute;
 left: 2px; right: 2px;
 top: 0px; bottom: 0px;
 margin: 0px; padding: 3px;
 width:expression(this.parentNode.offsetWidth-4+'px'); /* For IEs broken absolute positioning. */
-height: expression( this.parentNode.offsetHeight-16+'px'); /* For IEs broken absolute positioning. */
+height: expression(this.parentNode.offsetHeight-16+'px'); /* For IEs broken absolute positioning. */
 cursor: pointer;
 overflow: hidden;
 white-space: pre-wrap; /* css-3 */
@@ -294,7 +319,7 @@ padding: 0;
 z-index: 1;
 }
 
-.ui-cal-week .ui-cal-event span.button-remove{
+.ui-cal .ui-cal-event span.button-remove{
 position: absolute;
 top: 3px; right: 3px;
 width: 10px;
@@ -305,12 +330,12 @@ opacity: 0.6;
 -webkit-transition: opacity 0.3s linear;
 }
 
-.ui-cal-week .ui-cal-event span.button-remove:hover,
-.ui-cal-week .ui-cal-event.selected span.button-remove{
+.ui-cal .ui-cal-event span.button-remove:hover,
+.ui-cal .ui-cal-event.selected span.button-remove{
 opacity: 1;
 }
 
-.ui-cal-week .ui-cal-event p.title{
+.ui-cal .ui-cal-event p.title{
 /* style for time display in appointments */
 font-weight: bold;
 font-size: 1em;
@@ -325,7 +350,7 @@ cursor: pointer;
 text-overflow: ellipsis;
 }
 
-.ui-cal-week .ui-cal-event textarea.details{
+.ui-cal .ui-cal-event textarea.details{
 /* Style for textarea which allows user to edit
 the description for an appointment */
 color: #222;
@@ -384,7 +409,8 @@ box-sizing: border-box;
 
 .ui-cal .ui-cal-dateline,
 .ui-cal .ui-cal-dateline-fill,
-.ui-cal .ui-cal-event{
+.ui-cal .ui-cal-event,
+.ui-cal .ui-cal-event.selected{
 background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAUCAYAAABMDlehAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADlJREFUeNp0y6sNACAAxNALBs0ArM9QbMEnJKiD4jEvNZXtEiRVEBg2LJgwoEN7pbtlSBBBX44AAwARiCdWebcYiAAAAABJRU5ErkJggg==);
 }
 .ui-cal-week .ui-cal-resourceline,
