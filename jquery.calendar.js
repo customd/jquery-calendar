@@ -1,5 +1,5 @@
 /**
- * jQuery calendar plug-in 1.0.1
+ * jQuery calendar plug-in 1.0.2
  * Copyright 2012, Digital Fusion
  * Licensed under the MIT license.
  * http://opensource.teamdf.com/license/
@@ -16,7 +16,7 @@
 	// The name of your plugin. This is used to namespace your
 	// plugin methods, object data, and registerd events.
 	var plugin_name		= 'cal';
-	var plugin_version	= '1.0.1';
+	var plugin_version	= '1.0.2';
 	
 	var const_month		= 'month';
 	var const_week		= 'week';

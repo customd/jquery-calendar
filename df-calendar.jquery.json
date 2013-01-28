@@ -1,6 +1,6 @@
 {
 	"name"			: "df-calendar",
-	"version"		: "1.0.1",
+	"version"		: "1.0.2",
 	"title"			: "jQuery Calendar",
 	"author"		: {
 		"name"	: "Team DF",
@@ -31,7 +31,7 @@
 	"docs"			: "http://opensource.teamdf.com/calendar/docs/",
 	"demo"			: "http://opensource.teamdf.com/calendar/examples/week.html",
 	"files"			: ["jquery.calendar.js","jquery.calendar.min.js","jquery.calendar.css","jquery.calendar.min.css"],
-	"dependancies"	: {
+	"dependencies"	: {
 		"jquery" : ">1.6.0"
 	},
 	"licenses"		: [
