@@ -2,9 +2,10 @@
  * jQuery calendar plug-in 1.0.1
  * Copyright 2012, Digital Fusion
  * Licensed under the MIT license.
- * http://teamdf.com/jquery-plugins/license/
+ * http://opensource.teamdf.com/license/
  *
  * @author Sam Sehnert | sam@teamdf.com
+ * @docs http://opensource.teamdf.com/calendar/docs/ 
  * 
  * Implement an extremely flexible calendar interface with minimal up front development.
  */

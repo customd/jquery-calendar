@@ -11,9 +11,6 @@
 		{
 			"name"	: "Sam Sehnert",
 			"email"	: "sam@teamdf.com"
-		},{
-			"name"	: "Phil Taylor",
-			"email"	: "phil@teamdf.com"
 		}
 	],
 	"description"	: "This plugin allows developers to implement an extremely flexible calendar interface, with very little effort. The calendar plugin can render a Day, Week, Month and Resource calendar view. The plugin also provides an interface for manipulating and formatting dates and times.",
@@ -31,16 +28,16 @@
 		"inline"
 	],
 	"homepage"		: "https://github.com/teamdf/jquery-list/",
-	"docs"			: "https://github.com/teamdf/jquery-list/tree/master/docs",
-	"demo"			: "https://github.com/teamdf/jquery-list/",
-	"files"			: ["jquery.list.js"],
+	"docs"			: "http://opensource.teamdf.com/calendar/docs/",
+	"demo"			: "http://opensource.teamdf.com/calendar/examples/week.html",
+	"files"			: ["jquery.calendar.js","jquery.calendar.min.js","jquery.calendar.css","jquery.calendar.min.css"],
 	"dependancies"	: {
 		"jquery" : ">1.6.0"
 	},
 	"licenses"		: [
 		{
 		    "type": "MIT",
-		    "url": "http://teamdf.com/jquery-plugins/license/"
+		    "url": "http://opensource.teamdf.com/license/"
 		}
 	]
 }
