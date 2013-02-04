@@ -1,6 +1,6 @@
 {
 	"name"			: "df-calendar",
-	"version"		: "1.0.2",
+	"version"		: "1.0.3",
 	"title"			: "jQuery Calendar",
 	"author"		: {
 		"name"	: "Team DF",
@@ -27,7 +27,7 @@
 		"ics",
 		"inline"
 	],
-	"homepage"		: "https://github.com/teamdf/jquery-list/",
+	"homepage"		: "https://github.com/teamdf/jquery-calendar/",
 	"docs"			: "http://opensource.teamdf.com/calendar/docs/",
 	"demo"			: "http://opensource.teamdf.com/calendar/examples/week.html",
 	"files"			: ["jquery.calendar.js","jquery.calendar.min.js","jquery.calendar.css","jquery.calendar.min.css"],
