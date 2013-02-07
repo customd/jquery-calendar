@@ -1844,12 +1844,15 @@
 						// Loop over each of the event elements and draw them.
 						$events.each(function( i, event ){
 							
+							var oneDay = 24*60*60*1000;  //hour*minutes*seconds*milliseconds
+							var diffDays = Math.floor( Math.abs(data.settings.startdate.getTime() - values.begins.getTime())   / (oneDay) ) + 1;
+							
 							var $event = $(event), selected = $event.hasClass('selected'), spanning = $events.length > 1;
 							
 							// Calculate the new CSS.
 							var newStylesMain = {
-								top				: data.cache.dayHeight * Math.floor((values.begins.addDays(i).getDate()-1)/7) + 2 + 18,
-								left			: ( data.cache.dayWidth * ((values.begins.addDays(i).getDate()-1)%7) ) + ( i > 0 ? 0 : 2 ),
+								top				: data.cache.dayHeight * Math.floor((diffDays-1)/7) + 2 + 18,
+								left			: ( data.cache.dayWidth * ((diffDays-1)%7) ) + ( i > 0 ? 0 : 2 ),
 								width			: data.cache.dayWidth - ( spanning && i==0 ? 2 : 4 ),
 								height			: data.cache.incrementHeight,
 								backgroundColor : selected ? values.colors.mainSelected : 'transparent' ,
