@@ -2500,7 +2500,7 @@
 							 * We don't want to have to clone the layout again... in fact, it would be better
 							 * if we didn't clone the entire layout at all. Would be much more efficient,
 							 * and far less error prone to create the new layouts on the fly as we need them.
-							 * Or maybe even create them one in advance (after the animation has run).
+							 * Or maybe even create them one in advance (after the animation and init had run).
 							 */
 							
 //							var old_container	= data.elements.container,
@@ -2886,7 +2886,7 @@
 	};	
 	
 	$[plugin_name].lang = {
-		// Use ISO 639-1 language codes.
+		// Use ISO 639-1 language codes, for now.
 		'en' : {
 			// Text date/time representations.
 			short_month 	: Array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'),
