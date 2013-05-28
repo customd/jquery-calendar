@@ -31,6 +31,11 @@ $(function(){
 		
 		eventselect : function( uid ){
 			console.log( 'Selected event: '+uid );
+			
+		},
+		
+		eventmove : function( uid ){
+			console.log( 'Moved event: '+uid, arguments );
 		},
 		
 		eventremove : function( uid ){
