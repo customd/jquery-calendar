@@ -2317,6 +2317,76 @@
 			}
 			return $this;
 		},
+		/**
+		 * Refresh calendar events
+		 *  For each event in 'values' arg:
+         *
+         *  If event exists in calendar then function update it
+         *  If event does not exist in calendar then function add it
+         *  ========
+         *  Each event which exists in calendar and does not exist in arg values is removed
+         *
+		 * @param obj values	: (Array) An object of key => value pairs representing the data to refresh.
+		 * @param int speed		: (Opt) Time in milliseconds for the animation. Could also be 'slow' or 'fast'.
+		 * @param string ease	: (Opt) Name of the easing method to use for the animation.
+		 *
+		 * @return obj : The jQuery context (calendar collection) that this method was called from.
+		 * @scope public.
+		 */
+		refresh : function( values, speed, ease ){
+
+			var $this	= $(this), $event,
+				data	= $this.data(plugin_name);
+
+
+			if( data ){
+             var elements = data.elements.container.find('div.ui-'+plugin_name+'-event');
+				// Update animation speed.
+				if( speed === undefined ) speed = 'fast';
+
+				// If we've got an array, loop through and add differences to each element.
+				if( $.isArray( values ) ){
+
+					// Loop through the array and apply each of the updates in turn.
+
+
+					for( var i=0; i<values.length; i++ ){
+
+						// Find the event element.
+						$event = data.elements.container.find('div.ui-'+plugin_name+'-event[data-id="'+values[i].uid+'"]');
+
+						// IF we find one, then we need to update it with the new data.
+						if( $event.length > 0 ){
+							_private.event.update.apply( $event, [values[i], speed, ease] );
+                            //TODO slow performance
+                            //delete event from 'elements' array
+                            for( var j=0; j<elements.length; j++ )
+                            {
+
+                                if(parseInt($(elements[j]).attr('data-id')) == values[i].uid)
+                                {
+                                    elements.splice(j, 1);
+                                    break;
+                                }
+                            }
+
+						}
+                        else
+                        {
+                           // Add new event
+                           methods.add.apply( $this, [values[i]] );
+                        }
+
+					}
+
+				}
+                // Delete every event from calendar which was not in 'values' arg
+					for( var i=0; i<elements.length; i++ ){
+                        _private.event.remove.apply( elements[i],[null,speed,ease,true]);
+                    }
+			}
+			return $this;
+		},
 		
 		/**
 		 * Select an appointment with the given id
