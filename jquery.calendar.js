@@ -2414,6 +2414,27 @@
 		},
 
 		/**
+		 * Clear all event objects from the calendar
+		 *
+		 * @scope public.
+		 */
+		clear : function() {
+			// Get shortcuts to calendar container and data.
+			var $this	= $(this),
+				data	= $this.data(plugin_name);
+
+			// If the calendar has been set up already...
+			if( data ) {
+				for( i in data.cache.events ) {
+					data.target.cal('remove', i);
+				}
+				
+				// Clear the events cache
+				data.cache.events = new Object();
+			}
+		},
+
+		/**
 		 * Update a calendar appointment
 		 *
 		 * @param obj values	: An object of key => value pairs representing the data to update.
