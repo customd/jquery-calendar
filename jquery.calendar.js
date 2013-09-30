@@ -79,6 +79,8 @@
 		allowremove		: false,		// Enable or disable appointment deletion.
 		allowoverlap	: false,		// Enable or disable appointment overlaps.
 		allownotesedit	: false,		// Enable or disable inline notes editing.
+		
+		allowhtml		: false,		// Whether or not to allow users to embed html to appointment data
 
 		// Easing effects
 		easing			: {
@@ -688,14 +690,27 @@
 					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
 
 					// Set the new value into the event data.
-					$events.find('pre.details').text( values.notes );
-					$events.find('p.title').text(
-						values.title || ( values.begins.format(data.settings.maskeventlabel) +
-							(
-								data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+					if (data.settings.allowhtml)
+						$events.find('pre.details').html( values.notes );
+					else
+						$events.find('pre.details').text( values.notes );
+						
+					if (data.settings.allowhtml)
+						$events.find('p.title').html(
+							values.title || ( values.begins.format(data.settings.maskeventlabel) +
+								(
+									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+								)
 							)
-						)
-					);
+						);
+					else
+						$events.find('p.title').text(
+							values.title || ( values.begins.format(data.settings.maskeventlabel) +
+								(
+									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+								)
+							)
+						);
 
 					// Save the new values to the element.
 					$events.data(plugin_name,values);
@@ -732,9 +747,15 @@
 						noteHeight	= $notes.height();
 
 					// Now append the textarea.
-					var $textarea = $('<textarea class="details" />').text(values.notes||'').css({
-						boxShadow : 'inset 0px 0px 6px '+values.colors.mainShadow
-					}).on('mousedown.'+plugin_name,function(e){e.stopPropagation()}).appendTo($event);
+					var $textarea = null;
+					if (data.settings.allowhtml)
+						$textarea = $('<textarea class="details" />').html(values.notes||'').css({
+							boxShadow : 'inset 0px 0px 6px '+values.colors.mainShadow
+						}).on('mousedown.'+plugin_name,function(e){e.stopPropagation()}).appendTo($event);
+					else
+						$textarea = $('<textarea class="details" />').text(values.notes||'').css({
+							boxShadow : 'inset 0px 0px 6px '+values.colors.mainShadow
+						}).on('mousedown.'+plugin_name,function(e){e.stopPropagation()}).appendTo($event);
 
 					if( $event.height() <= 30 ){
 
@@ -805,7 +826,11 @@
 						}
 
 						// Add the original notes back in.
-						$events.append($notes.text(values.notes||''));
+						if (data.settings.allowhtml)
+							$events.append($notes.html(values.notes||''));
+						else
+							$events.append($notes.text(values.notes||''));
+							
 						$event.bind('dblclick.'+plugin_name,_private.event.edit);
 
 						// Only bother with the callback if the notes have actually changed.
@@ -1578,13 +1603,25 @@
 
 						// Add the text straight to the event details.
 						$event.attr('data-id',values.uid);
-						$event.find('pre.details').text( values.notes );
-						$event.find('p.title').text( values.title || ( values.begins.format(data.settings.maskeventlabel) +
-								(
-									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+						if (data.settings.allowhtml)
+							$event.find('pre.details').html( values.notes );
+						else
+							$event.find('pre.details').text( values.notes );
+						
+						if (data.settings.allowhtml)
+							$event.find('p.title').html( values.title || ( values.begins.format(data.settings.maskeventlabel) +
+									(
+										data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+									)
 								)
-							)
-						 );
+							 );
+						else
+							$event.find('p.title').text( values.title || ( values.begins.format(data.settings.maskeventlabel) +
+									(
+										data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+									)
+								)
+							 );
 
 
 						// Start the events collection small with this element.
@@ -1708,7 +1745,12 @@
 							}
 
 							// Set the appointment time while dragging.
-							if( !values.title ) $event.find('p.title').text( values.begins.format(data.settings.maskeventlabel) + ( data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : '' ) );
+							if( !values.title ) {
+								if (data.settings.allowhtml)
+									$event.find('p.title').html( values.begins.format(data.settings.maskeventlabel) + ( data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : '' ) );
+								else
+									$event.find('p.title').text( values.begins.format(data.settings.maskeventlabel) + ( data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : '' ) );
+							}
 
 							// Choose whether to animate or not.
 							if( !speed ){
@@ -1780,19 +1822,37 @@
 						clonedDateFormat = clonedDateObject.format('Y-m-d');
 
 						// Clone the day element, and store the date it represents in an attribute.
-						clonedDate = data.elements.dayblock.clone(true)
-							.attr({
-								'date'	: clonedDateFormat,
-								'day'	: clonedDateObject.getDay()
-							})
-							.css({
-								'left'	: data.cache.dayWidth * (i%7),
-								'top'	: data.cache.dayHeight * Math.floor(i/7)
-							})
-							.toggleClass( 'non-month', clonedDateObject.getMonth()+1 != data.settings.startmonth )
-							.find('p')
-								.text( clonedDateObject.getDate() )
-							.end();
+						clonedDate = null;
+						
+						if (data.settings.allowhtml) {
+							clonedDate = data.elements.dayblock.clone(true)
+								.attr({
+									'date'	: clonedDateFormat,
+									'day'	: clonedDateObject.getDay()
+								})
+								.css({
+									'left'	: data.cache.dayWidth * (i%7),
+									'top'	: data.cache.dayHeight * Math.floor(i/7)
+								})
+								.toggleClass( 'non-month', clonedDateObject.getMonth()+1 != data.settings.startmonth )
+								.find('p')
+									.html( clonedDateObject.getDate() )
+								.end();
+						} else {
+							clonedDate = data.elements.dayblock.clone(true)
+								.attr({
+									'date'	: clonedDateFormat,
+									'day'	: clonedDateObject.getDay()
+								})
+								.css({
+									'left'	: data.cache.dayWidth * (i%7),
+									'top'	: data.cache.dayHeight * Math.floor(i/7)
+								})
+								.toggleClass( 'non-month', clonedDateObject.getMonth()+1 != data.settings.startmonth )
+								.find('p')
+									.text( clonedDateObject.getDate() )
+								.end();
+						}
 
 						if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today');
 
@@ -1853,12 +1913,25 @@
 						// Add the text straight to the event details.
 						$event.find('p.resize-top, p.resize-bottom').hide();
 						$event.attr('data-id',values.uid);
-						$event.find('pre.details').text( values.notes );
-						$event.find('p.title').text( '● ' + ( values.title || ( values.begins.format(data.settings.maskeventlabel) +
-							(
-								data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
-							)
-						) ) );
+						
+						if (data.settings.allowhtml)
+							$event.find('pre.details').text( values.notes );
+						else
+							$event.find('pre.details').html( values.notes );
+							
+						if (data.settings.allowhtml)
+							$event.find('p.title').html( '● ' + ( values.title || ( values.begins.format(data.settings.maskeventlabel) +
+								(
+									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+								)
+							) ) );
+						else
+							$event.find('p.title').text( '● ' + ( values.title || ( values.begins.format(data.settings.maskeventlabel) +
+								(
+									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
+								)
+							) ) );
+							
 						$event.attr('title',values.notes||'').unbind('dblclick.'+plugin_name).bind('dblclick.'+plugin_name,_private.event.edit);
 
 						// Start the events collection small with this element.
@@ -2341,7 +2414,7 @@
 				if( !'uid' in bData )					throw _private.errors.eventParse('Missing unique id (uid)',bData);
 				if( !'begins' in bData )				throw _private.errors.eventParse('Missing start date/time (begins)',bData);
 				if( !'ends' in bData )					throw _private.errors.eventParse('Missing end date/time (ends)',bData);
-
+				
 				// Make sure this UID doesn't already exist.
 				if( bData.uid in data.cache.events )	throw _private.errors.eventParse('UID must be unique', bData);
 
@@ -2376,7 +2449,7 @@
 
 				data.cache.events[values.uid] = values;
 				$this.data(plugin_name,data);
-
+				
 				// Only create the events if they're in range.
 				if( _private.inrange.apply( this, [dataBegins, dataEnds, data.settings.startdate, data.cache.enddate] ) ){
 
@@ -2402,7 +2475,6 @@
 				data	= $this.data(plugin_name);
 
 			if( data && uid in data.cache.events ){
-
 				// Find the event element.
                 $event = data.cache.events[uid].elems;
 
