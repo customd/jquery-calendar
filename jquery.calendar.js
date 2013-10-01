@@ -2415,18 +2415,27 @@
 
 		/**
 		 * Clear all event objects from the calendar
+		 * 
+		 * @param  mixed  speed : The speed with which we want to remove the event.
+		 * @param  string ease  : The easing to use when animating the removal.
 		 *
 		 * @scope public.
 		 */
-		clear : function() {
+		clear : function(speed, ease) {
 			// Get shortcuts to calendar container and data.
 			var $this	= $(this),
+				$event	= null,
 				data	= $this.data(plugin_name);
+				
+			// Set the default speed if its not already defined.
+			if( speed === undefined ) speed = 'fast';
+			if( !ease ) ease = data.settings.easing.eventremove;
 
 			// If the calendar has been set up already...
 			if( data ) {
 				for( i in data.cache.events ) {
-					data.target.cal('remove', i);
+					$event = data.cache.events[i].elems;
+					_private.event.remove.apply($event,[null,speed,ease]);
 				}
 				
 				// Clear the events cache
