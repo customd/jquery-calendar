@@ -1,5 +1,5 @@
 /**
- * jQuery calendar plug-in 1.1.0
+ * jQuery calendar plug-in 1.1.1
  * Copyright 2012, Digital Fusion
  * Licensed under the MIT license.
  * http://opensource.teamdf.com/license/
@@ -16,7 +16,7 @@
 	// The name of your plugin. This is used to namespace your
 	// plugin methods, object data, and registerd events.
 	var plugin_name		= 'cal';
-	var plugin_version	= '1.1.0';
+	var plugin_version	= '1.1.1';
 
 	var const_month		= 'month';
 	var const_week		= 'week';
@@ -32,6 +32,7 @@
 		daystodisplay	: null,			// Defaults to 7 if none of start month/year/monthstodisplay are defined.
 
 		// Start month,year and months to display.
+		startweek		: null,			// CUSTOM
 		startmonth		: null,			// Defaults to (new Date()).getMonth()+1 if monthstodisplay or startyear are defined (we use 1-12, not 0-11).
 		startyear		: null,			// Defaults to (new Date()).getFullYear() if monthstodisplay or startmonth are defined.
 		monthstodisplay	: null,			// Defaults to 1 if either of startmonth or startyear are defined. TODO: Support more than one month???
@@ -79,7 +80,7 @@
 		allowremove		: false,		// Enable or disable appointment deletion.
 		allowoverlap	: false,		// Enable or disable appointment overlaps.
 		allownotesedit	: false,		// Enable or disable inline notes editing.
-		
+
 		allowhtml		: false,		// Whether or not to allow users to embed html to appointment data
 
 		// Easing effects
@@ -98,6 +99,7 @@
 		eventselect		: $.noop,
 		eventmove		: $.noop,
 		eventresize		: $.noop,
+		eventdraw		: $.noop,
 
 		// day events
 		dayclick		: $.noop,
@@ -310,26 +312,91 @@
 		/**
 		 * Get dates for given repetition rules, limited by begin and end dates.
 		 *
+		 * TODO: This is incomplete, and will only handle basic 'daily', 'weekly', 'monthly', 'yearly'
+		 * 		 repetitions, 'until' dates, and repetition intervals, e.g., every 2 weeks, every 3 months, etc.
+		 * 		 More advanced repetitions, like every week on tuesdays and thursdays.
+		 *
 		 * @param object data	: The calendar data object.
 		 * @param object event	: The event we're generating repetitions for.
 		 *
-		 * @return array : An array of dates which the repetitions fall on.
+		 * @return array : An array of dates which the repetitions fall on. Only the dates, not the times.
 		 */
 		repetitions : function( data, event )
 		{
-			var repeat = [];
+			// Set up variables used in rule_loop below.
+			var repeat = [], rule, from, until, interval, _increment_by, _date, _possible_increments;
 
-			console.log( 'Parsing repetitions: ', arguments );
+			//
+			// TODO: Extend this method to parse out 'dates' object, and add those to the repeat rules.
+			// 		 This also includes adding exception dates, and we'll need to do a similar thing to
+			// 		 support exception rules.
+			//
 
-			if( 'freq' in event.rules )
+			// Loop over each repetition rule.
+			rule_loop : for( var i in event.repeat.rules.include )
 			{
-				switch( event.rules.freq )
-				{
-					case 'daily' :
-					case 'weekly' :
-					case 'yearly' :
+				// Shortcut variables.
+				rule		= event.repeat.rules.include[i];
+				from		= event.begins > data.settings.startdate ? event.begins : data.settings.startdate ; // TODO: set this to the 'next' repetition date for this range.
+				until		= 'until' in rule ? $[plugin_name].date(rule.until) : data.cache.enddate ,
+				interval	= 'interval' in rule ? +rule.interval : 1 ;
 
-					break;
+				//
+				// Skip rule parsing where we don't need to do it...
+				//
+				if(
+
+					// If the event begins after the end date.
+					( event.begins > data.cache.enddate ) ||
+
+					// If we've got an 'until' date, and it's before the start date.
+					( until <= data.settings.startdate )
+
+				) continue;
+
+				// Get the (required) frequency rule.
+				if( 'freq' in rule )
+				{
+					// Check which rule we've got.
+					switch( rule.freq )
+					{
+						case 'daily' :	_increment_by = interval+' Day'; break;
+						case 'weekly' :	_increment_by = interval+' Week'; break;
+						case 'monthly':	_increment_by = interval+' Month'; break;
+						case 'yearly' :	_increment_by = interval+' Year'; break;
+
+						// We can't handle any other frequency types at present, so if this is
+						// the case, break out and continue to the next iteration of rule_loop.
+						default: continue rule_loop;
+					}
+
+					// Copy the begins date.
+					_date = event.begins.copy();
+
+					// We need to make sure the begins date is the first in the iteration
+					// of repetitions to generate. This means bringing it forward by the difference
+					// between the event.begins date, and the data.settings.startdate
+					if( event.begins < data.settings.startdate )
+					{
+						// Increment the date so we've got the first repetition position.
+						_date = _date.incrementBy( _increment_by, Math.ceil( event.begins.getIncrementBetween( data.settings.startdate, _increment_by ) ) );
+					}
+					else
+					{
+						// Move to the first repetition position (i.e., NOT the actual event itself).
+						_date = _date.incrementBy( _increment_by );
+					}
+
+					// Get the number of increments we can fit in current display range.
+					_possible_increments = Math.ceil( _date.getIncrementBetween( data.cache.enddate, _increment_by ) );
+
+					// Loop over and create the basic array of repetitions.
+					// This won't work for irregular repetitions, like every Tuesday & Thursday.
+					for( var i=0; i<_possible_increments; i++ )
+					{
+						repeat[_date.getTime()] = _date;
+						_date = _date.incrementBy( _increment_by );
+					}
 				}
 			}
 
@@ -374,6 +441,7 @@
 							partial		: true,
 							inset		: 0,
 							count		: 0,
+							index		: 0,
 							items		: {},
 							uid			: uid
 						};
@@ -385,6 +453,8 @@
 				// We only need to check if there is more than one appointment in this time span.
 				if( check.length > 1 ){
 
+					var index = 0;
+
 					// Sort by start date.
 					check.sort(function(a,b){ return a.begins.getTime()-b.begins.getTime(); });
 
@@ -394,6 +464,9 @@
 
 						// Make sure this property exists on the object (not a prototyped property).
 						if( check.hasOwnProperty(uid1) ){
+
+							// Increment the index.
+							check[uid1].overlap.index = index++;
 
 							// Loop through each of the events and compare.
 							for( var uid2 in check ){
@@ -553,7 +626,21 @@
 					calendars	= [],
 					lines		= ics.replace(/\r\n/g,'\n').split('\n'),
 					event		= null,
-					calendar	= null;
+					calendar	= null,
+
+					// Event prototype.
+					_event		= {
+						repeat : {
+							rules : {
+								include : [],
+								exclude : []
+							},
+							dates : {
+								include : [],
+								exclude : []
+							}
+						}
+					};
 
 				for( var i=lines.length-1; i>0; i-- ){
 					var matches = parse.folds.exec(lines[i]);
@@ -582,7 +669,7 @@
 
 						case 'cal_info' :
 							// Check for a change in parsing mode.
-							if( line.indexOf('BEGIN:VEVENT')==0 ){ event = { repeat : [], except : [] }; parsing = 'cal_event' };
+							if( line.indexOf('BEGIN:VEVENT')==0 ){ event = $.extend(true,{},_event); parsing = 'cal_event' };
 							if( line.indexOf('END:VCALENDAR')==0 ){ calendars.push(calendar); parsing = 'done' };
 
 							// If parsing mode has changed, continue with next line.
@@ -608,24 +695,22 @@
 								//
 								// Standard / Basic values.
 								//
-								case 'uid'		: event.uid		= matches[3]; break;
-								case 'dtstart'	: event.begins	= $[plugin_name].date(matches[3]); break;
-								case 'dtend'	: event.ends	= $[plugin_name].date(matches[3]); break;
-								case 'summary'	: event.notes	= matches[3]; break;
-
+								case 'uid'			: event.uid		= matches[3]; break;
+								case 'dtstart'		: event.begins	= $[plugin_name].date(matches[3]); break;
+								case 'dtend'		: event.ends	= $[plugin_name].date(matches[3]); break;
+								case 'summary'		: event.title	= matches[3].replace(/\\([;,])/g,'$1').replace(/\\n/g,'\n'); break;
+								case 'description'	: event.notes	= matches[3].replace(/\\([;,])/g,'$1').replace(/\\n/g,'\n'); break;
 								//
 								// Repetition rules.
-								// TODO: This doesn't conform to the standard, in that we're only parsing one instance of this, and thus missing potential repetitions.
 								//
-								case 'rrule'	: event.repeats = parse._rrule(matches[3]); break;
-								case 'exrule'	: event.excepts = parse._rrule(matches[3]); break;
+								case 'rrule'		: event.repeat.rules.include.push(parse._rrule(matches[3])); break;
+								case 'exrule'		: event.repeat.rules.exclude.push(parse._rrule(matches[3])); break;
 
 								//
 								// Repetition dates.
-								// TODO: This doesn't confirm to the standard. It assumes each rdate is on it's own row, where the standard allows multiple separated by semi-colon.
 								//
-								case 'rdate'	: event.repeat.push($[plugin_name].date(matches[3])); break;
-								case 'exdate'	: event.except.push($[plugin_name].date(matches[3])); break;
+								case 'rdate'		: event.repeat.dates.include.push($[plugin_name].date(matches[3])); break;
+								case 'exdate'		: event.repeat.dates.exclude.push($[plugin_name].date(matches[3])); break;
 							}
 						break;
 					}
@@ -651,7 +736,7 @@
 			 */
 			calculateElementCount : function( values ){
 				// Return the number of elements that should be drawn for this object.
-				return Math.ceil( values.cache.begins.getDaysBetween( values.cache.ends, true ) )+1;
+				return Math.ceil( values.cache.begins.getDaysBetween( values.cache.ends, true ) );
 			},
 
 			/**
@@ -693,7 +778,7 @@
 
 					// Set the new value into the event data.
 					$events.find('pre.details')[content_setter]( values.notes );
-						
+
 					$events.find('p.title')[content_setter](
 						values.title || ( values.begins.format(data.settings.maskeventlabel) +
 							(
@@ -813,7 +898,7 @@
 
 						// Add the original notes back in.
 						$events.append($notes[content_setter](values.notes||''));
-							
+
 						$event.bind('dblclick.'+plugin_name,_private.event.edit);
 
 						// Only bother with the callback if the notes have actually changed.
@@ -1589,8 +1674,8 @@
 						// Add the text straight to the event details.
 						$event.attr('data-id',values.uid);
 						$event.find('pre.details')[content_setter]( values.notes );
-						
-						
+
+
 						$event.find('p.title')[content_setter]( values.title || ( values.begins.format(data.settings.maskeventlabel) +
 								(
 									data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
@@ -1810,7 +1895,7 @@
 							.find('p')
 								[content_setter]( clonedDateObject.getDate() )
 							.end();
-						
+
 
 						if( clonedDateFormat === todayDate ) clonedDate.addClass('ui-'+plugin_name+'-today');
 
@@ -1826,6 +1911,8 @@
 								.find('p')
 									.html( clonedDateObject.format( data.settings.maskmonthlabel ) )
 								.end();
+
+							if( clonedDateFormat === todayDate ) clonedDateLabel.addClass('ui-'+plugin_name+'-today');
 
 							data.elements.dateline.append( clonedDateLabel );
 						}
@@ -1850,7 +1937,6 @@
 					// Cache the dates (make sure for internal purposes it doesn't extend after the last displaying date.
 					values.cache.ends = ( data.cache.enddate < values.ends ? data.cache.enddate.addSeconds(-1) : values.ends );
 					values.cache.begins = ( data.settings.startdate > values.begins ? data.settings.startdate.copy() : values.begins );
-					values.cache.repetitions = _private.repetitions.apply(this, [data,values]);
 
 					// Calculate the number of elements required to render this event.
 					// This would usually be one event per day * the number of resources this event is applied to.
@@ -1875,14 +1961,14 @@
 						var content_setter = data.settings.allowhtml ? 'html' : 'text' ;
 
 						$event.find('pre.details').text( values.notes );
-						
+
 						$event.find('p.title')[content_setter]( '● ' + ( values.title || ( values.begins.format(data.settings.maskeventlabel) +
 							(
 								data.settings.maskeventlabelend !== '' ? data.settings.maskeventlabeldelimiter + values.ends.format( data.settings.maskeventlabelend ) : ''
 							)
 						) ) );
-						
-							
+
+
 						$event.attr('title',values.notes||'').unbind('dblclick.'+plugin_name).bind('dblclick.'+plugin_name,_private.event.edit);
 
 						// Start the events collection small with this element.
@@ -1916,6 +2002,9 @@
 					values.elems = $events;
 					$events.data(plugin_name,values);
 
+					// Event was drawn.
+					data.settings.eventdraw.apply(values.calendar,[values.uid,values,$event]);
+
 					// Run the positioning code.
 					_private.draw[data.type].position.apply($events);
 				},
@@ -1945,7 +2034,38 @@
 							var oneDay = 24*60*60*1000;  //hour*minutes*seconds*milliseconds
 							var diffDays = Math.floor( Math.abs(data.settings.startdate.getTime() - values.begins.getTime())   / (oneDay) ) + 1;
 
-							var $event = $(event), selected = $event.hasClass('selected'), spanning = $events.length > 1;
+							var $event		= $(event),
+								selected	= $event.hasClass('selected'),
+								spanning	= $events.length > 1,
+								dayBegins	= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimestart ),
+								dayEnds		= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimeend );
+
+							// Prevent detection of overlaps if we've passed through
+							// the detect flag.
+							if( detect ){
+
+								// Check if we were overlapping items previously.
+								var wasOverlapping = values.overlap.items;
+
+								// Get the event overlaps for this day.
+								_private.overlaps.apply(values.calendar,[dayBegins,dayEnds,values.resource]);
+
+								// Make sure we've got any update event values. In particular, the overlap data.
+								values = $event.data(plugin_name);
+
+								// Redraw any items that this event is overlapping.
+								for( var uid in values.overlap.items ){
+									_private.draw[data.type].position.apply( values.overlap.items[uid].elems, [false,false,false] );
+								}
+
+								// Redraw any items that we were previously overlapping.
+								// Double check that we haven't already re-drawn this item.
+								for( var uid in wasOverlapping ){
+									if( !( uid in values.overlap.items ) ){
+										_private.draw[data.type].position.apply( wasOverlapping[uid].elems, [false,false,true] );
+									}
+								}
+							}
 
 							// Calculate the new CSS.
 							var newStylesMain = {
@@ -1957,6 +2077,9 @@
 								textShadow		: selected ? values.colors.mainTextShadow+' 1px 1px 1px' : 'none' ,
 								color			: selected ? values.colors.mainText : values.colors.mainBackground
 							}
+
+							// Calculate top position...
+							newStylesMain.top += ( 14 * values.overlap.index || 0 );
 
 							// Re-set the notes attribute on this event.
 							$event.attr('title',values.notes||'');
@@ -2348,11 +2471,12 @@
 		 * Add a new event object to the calendar
 		 *
 		 * @param obj bData		: An object of key => value pairs representing an appointment.
+		 * @param obj rData		: The given appointment is a repetition of THIS appointment object.
 		 *
 		 * @return obj : The jQuery context (calendar collection) that this method was called from.
 		 * @scope public.
 		 */
-		add : function( bData ){
+		add : function( bData, rData ){
 			/* Adds a new event object to the calendar */
 
 			// Get shortcuts to calendar container and data.
@@ -2365,7 +2489,7 @@
 				if( !'uid' in bData )					throw _private.errors.eventParse('Missing unique id (uid)',bData);
 				if( !'begins' in bData )				throw _private.errors.eventParse('Missing start date/time (begins)',bData);
 				if( !'ends' in bData )					throw _private.errors.eventParse('Missing end date/time (ends)',bData);
-				
+
 				// Make sure this UID doesn't already exist.
 				if( bData.uid in data.cache.events )	throw _private.errors.eventParse('UID must be unique', bData);
 
@@ -2384,7 +2508,29 @@
 					colors		: bData.color ? $[plugin_name].colors.generate( bData.color ) : data.settings.defaultcolor,
 					title		: bData.title || null,
 					notes		: bData.notes || '',
+
+					//
+					// Repetition rules
+					//
+					repeat		: {
+						rules : {
+							include : bData.repeat && bData.repeat.rules && bData.repeat.rules.include ? bData.repeat.rules.include : [],
+							exclude : bData.repeat && bData.repeat.rules && bData.repeat.rules.exclude ? bData.repeat.rules.exclude : []
+						},
+						dates : {
+							include : bData.repeat && bData.repeat.dates && bData.repeat.dates.include ? bData.repeat.dates.include : [],
+							exclude : bData.repeat && bData.repeat.dates && bData.repeat.dates.exclude ? bData.repeat.dates.exclude : []
+						}
+					},
+
+					//
+					// The cache object
+					//
 					cache		: {},
+
+					//
+					// Structure for holding overlap data.
+					//
 					overlap		: {
 						inset : [],
 						depth : []
@@ -2398,9 +2544,35 @@
 				if( values.resource === false )			throw _private.errors.eventParse('Invalid resource id (resource)',bData);
 				if( !(values.begins instanceof Date) )	throw _private.errors.eventParse('Invalid start date/time (begins)',bData);
 
+				// STORE the event!
 				data.cache.events[values.uid] = values;
 				$this.data(plugin_name,data);
-				
+
+				// A repetition can't have repetitions... it IS a repetition!!
+				if( $.isPlainObject( rData ) )
+				{
+					values.cache.repeat			= false;
+					values.cache.repeats		= rData.uid; // Only need to store the UID for now...
+				}
+				else
+				{
+					// Store the parsed repetitions for this event.
+					values.cache.repetitions = _private.repetitions.apply(this, [data,values]);
+
+					// Create the repetition elements.
+					for( var i in values.cache.repetitions )
+					{
+						rData = $.extend(true,{},bData);
+						rData.repeat	= false;
+						rData.uid		= '--repeat--'+i+'|'+values.uid;
+						rData.begins	= values.cache.repetitions[i];
+						rData.ends		= values.cache.repetitions[i].addDays( values.begins.getDaysBetween( values.ends ) );
+
+						// Add the repeating event...
+						methods.add.apply(this,[rData,bData]);
+					}
+				}
+
 				// Only create the events if they're in range.
 				if( _private.inrange.apply( this, [dataBegins, dataEnds, data.settings.startdate, data.cache.enddate] ) ){
 
@@ -2438,7 +2610,7 @@
 
 		/**
 		 * Clear all event objects from the calendar
-		 * 
+		 *
 		 * @param  mixed  speed : The speed with which we want to remove the event.
 		 * @param  string ease  : The easing to use when animating the removal.
 		 *
@@ -2449,7 +2621,7 @@
 			var $this	= $(this),
 				$event	= null,
 				data	= $this.data(plugin_name);
-				
+
 			// Set the default speed if its not already defined.
 			if( speed === undefined ) speed = 'fast';
 			if( !ease ) ease = data.settings.easing.eventremove;
@@ -2460,7 +2632,7 @@
 					$event = data.cache.events[i].elems;
 					_private.event.remove.apply($event,[null,speed,ease]);
 				}
-				
+
 				// Clear the events cache
 				data.cache.events = new Object();
 			}
@@ -2551,7 +2723,8 @@
 		 * @return mixed : Returns the settings value if @value is omitted and @key is a string, otherwise, the jQuery collection.
 		 * @scope public.
 		 */
-		option : function( key, value ){
+		option : function( key, value )
+		{
 			var $this = $(this), data = $this.data(plugin_name);
 
 			// Only bother if we've set this up before.
@@ -2596,7 +2769,7 @@
 							// Save the data against the plugin.
 							$this.data(plugin_name,data);
 
-							var event;
+							var event, repeat;
 
 							// Detatch all of the events, as these elements have
 							// data stored against them... we may want to add these later.
@@ -2605,23 +2778,92 @@
 								// Cache the event.
 								event = data.cache.events[i];
 
-								// Check if this event is in the current range.
-								if( !_private.inrange.apply(this,[event.begins,event.ends,data.settings.startdate,data.cache.enddate]) ){
-									if( 'elems' in event && event.elems.length > 0 ){
-										// Remove this event from its container.
-										event.elems.detach();
+								// A repetition can't have repetitions... it IS a repetition!!
+								if( !event.cache.repeats )
+								{
+									for( var j in event.cache.repetitions )
+									{
+										var repeat = event.cache.repetitions[j];
+
+										// Remove the temporary repetition events
+										// from the calendars event cache.
+										delete data.cache.events[repeat.uid];
+										$this.data(plugin_name,data);
+
+										// Detatch the elements.
+										if( 'elems' in repeat && repeat.elems.length > 0 ){
+											// Remove this event from its container.
+											repeat.elems.remove();
+										}
 									}
-								} else {
-									// Redraw this element. The length and position may have changed.
-									_private.draw[data.type].event.apply($this,[data,event]);
+
+									// Store the newly parsed repetitions for this event.
+									event.cache.repetitions = _private.repetitions.apply(this, [data,event]);
+
+									// Create the repetition elements.
+									// These are by definition a part of the current range.
+									for( var j in event.cache.repetitions )
+									{
+										repeat = $.extend(true,{},event);
+										repeat.repeat	= false;
+										repeat.uid		= '--repeat--'+j+'|'+event.uid;
+										repeat.begins	= event.cache.repetitions[j];
+										repeat.ends		= event.cache.repetitions[j].addDays( event.begins.getDaysBetween( event.ends ) );
+
+										// Remove the temporary repetition events
+										// from the calendars event cache.
+										// Detatch the elements.
+										if( !( repeat.uid in data.cache.events ) )
+										{
+											// Add the repeating event...
+											methods.add.apply(this,[repeat,event]);
+										}
+										else
+										{
+											// Redraw this element. The length and position may have changed.
+											_private.draw[data.type].event.apply($this,[data,repeat]);
+										}
+									}
+
+									// Check if this event is in the current range.
+									if( !_private.inrange.apply(this,[event.begins,event.ends,data.settings.startdate,data.cache.enddate]) )
+									{
+										if( 'elems' in event && event.elems.length > 0 )
+										{
+											// Remove this event from its container.
+											event.elems.detach();
+										}
+									}
+									else
+									{
+										// Redraw this element. The length and position may have changed.
+										_private.draw[data.type].event.apply($this,[data,event]);
+									}
+								}
+								else
+								{
+									// Remove the temporary repetition events
+									// from the calendars event cache.
+									delete data.cache.events[event.uid];
+									$this.data(plugin_name,data);
+
+									// Detatch the elements.
+									if( 'elems' in event && event.elems.length > 0 )
+									{
+										// Remove this event from its container.
+										event.elems.remove();
+									}
+									else
+									{
+										// Redraw this element. The length and position may have changed.
+										_private.draw[data.type].event.apply($this,[data,event]);
+									}
 								}
 							}
 
-							/** TODO: This is WEEKVIEW only code... do we need to abstract this out to a new method?? **/
-
 							// Modify the date attributes stored on each of the dayblocks and labels.
 							//
-							var $dates		= $('div.ui-'+plugin_name+'-date',data.elements.container).removeClass('ui-'+plugin_name+'-today'),
+							var $dates		= $('div.ui-'+plugin_name+'-date, div.ui-'+plugin_name+'-label-date',data.elements.container).removeClass('ui-'+plugin_name+'-today'),
 								todayDate	= $[plugin_name].date().format('Y-m-d');
 
 							switch( data.type ) {
@@ -2631,8 +2873,24 @@
 								 */
 								case const_month :
 
+									$('div.ui-'+plugin_name+'-label-date',data.elements.dateline).removeClass('ui-'+plugin_name+'-today').each(function(i,label){
+
+										// Get a shortcut to the label, and create the new date objects.
+										var $label				= $(label),
+											clonedDateObject	= newdate.addDays(i),
+											clonedDateFormat	= clonedDateObject.format('Y-m-d');
+
+										// Set the dayblock's date attribute
+										$label.attr({
+											'date' : clonedDateFormat
+										});
+
+										// Make sure we add the 'today' class to the calendar.
+										if( clonedDateFormat === todayDate ) $label.addClass('ui-'+plugin_name+'-today');
+									});
+
 									// Loop over each of the dateline elements.
-									$(data.elements.dayblock).removeClass('ui-'+plugin_name+'-today').each(function(i,date){
+									$('div.ui-'+plugin_name+'-date',data.elements.container).removeClass('ui-'+plugin_name+'-today').each(function(i,date){
 
 										// Get a shortcut to the label, and create the new date objects.
 										var $date				= $(date),
@@ -2686,6 +2944,25 @@
 										// Make sure we add the 'today' class to the calendar.
 										if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
 									});
+
+									$('div.ui-'+plugin_name+'-date',data.elements.container).removeClass('ui-'+plugin_name+'-today').each(function(i,label){
+
+										// Get a shortcut to the label, and create the new date objects.
+										var $date				= $(date),
+											clonedDateObject	= newdate.addDays(i),
+											clonedDateFormat	= clonedDateObject.format('Y-m-d');
+
+										// Set the dayblock's date attribute
+										$date.attr({
+											'date'		: clonedDateFormat,
+											'day'		: clonedDateObject.getDay()
+										});
+
+										// Make sure we add the 'today' class to the calendar.
+										if( clonedDateFormat === todayDate ) $date.addClass('ui-'+plugin_name+'-today');
+
+									});
+
 								break;
 
 							}
