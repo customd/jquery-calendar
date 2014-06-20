@@ -162,18 +162,18 @@
 		 * @return object		: Returns the jquery collection that was passed as 'this'.
 		 */
 		selectrange : function(start, end) {
-		    return this.each(function() {
-		        if(this.setSelectionRange) {
-		            this.focus();
-		            this.setSelectionRange(start, end);
-		        } else if(this.createTextRange) {
-		            var range = this.createTextRange();
-		            range.collapse(true);
-		            range.moveEnd('character', end);
-		            range.moveStart('character', start);
-		            range.select();
-		        }
-		    });
+			return this.each(function() {
+				if(this.setSelectionRange) {
+					this.focus();
+					this.setSelectionRange(start, end);
+				} else if(this.createTextRange) {
+					var range = this.createTextRange();
+					range.collapse(true);
+					range.moveEnd('character', end);
+					range.moveStart('character', start);
+					range.select();
+				}
+			});
 		},
 
 		/**
@@ -2599,10 +2599,10 @@
 
 			if( data && uid in data.cache.events ){
 				// Find the event element.
-                $event = data.cache.events[uid].elems;
+				$event = data.cache.events[uid].elems;
 
-                // Call the remove method.
-                _private.event.remove.apply($event,[null,speed,ease]);
+				// Call the remove method.
+				_private.event.remove.apply($event,[null,speed,ease]);
 			}
 
 			return $this;
@@ -2682,6 +2682,72 @@
 						// IF we find one, then we need to update it with the new data.
 						_private.event.update.apply( $event, [values, speed, ease] );
 					}
+				}
+			}
+			return $this;
+		},
+
+		/**
+		 * Refresh calendar events
+		 *  For each event in 'values' arg:
+		 *
+		 *  If event exists in calendar then function update it
+		 *  If event does not exist in calendar then function add it
+		 *  ========
+		 *  Each event which exists in calendar and does not exist in arg values is removed
+		 *
+		 * @param obj values	: (Array) An object of key => value pairs representing the data to refresh.
+		 * @param int speed		: (Opt) Time in milliseconds for the animation. Could also be 'slow' or 'fast'.
+		 * @param string ease	: (Opt) Name of the easing method to use for the animation.
+		 *
+		 * @return obj : The jQuery context (calendar collection) that this method was called from.
+		 * @scope public.
+		 */
+		refresh : function( values, speed, ease )
+		{
+			var $this	= $(this), $event,
+				data	= $this.data(plugin_name);
+
+			if( data )
+			{
+				var elements = data.elements.container.find('div.ui-'+plugin_name+'-event');
+
+				// Set default animation speed.
+				if( speed === undefined ) speed = 'fast';
+
+				// If we've got an array, loop through and add differences to each element.
+				if( $.isArray( values ) )
+				{
+					// Loop through the array and apply each of the updates in turn.
+					for( var i=0; i<values.length; i++ )
+					{
+						// Find the event element.
+						$event = data.elements.container.find('div.ui-'+plugin_name+'-event[data-id="'+values[i].uid+'"]');
+
+						// IF we find one, then we need to update it with the new data.
+						if( $event.length > 0 ){
+							_private.event.update.apply( $event, [values[i], speed, ease] );
+							//TODO slow performance
+							//delete event from 'elements' array
+							for( var j=0; j<elements.length; j++ )
+							{
+								if(parseInt($(elements[j]).attr('data-id')) == values[i].uid)
+								{
+									elements.splice(j, 1);
+									break;
+								}
+							}
+						}
+						else
+						{
+							// Add new event
+							methods.add.apply( $this, [values[i]] );
+						}
+					}
+				}
+				// Delete every event from calendar which was not in 'values' arg
+				for( var i=0; i<elements.length; i++ ){
+					_private.event.remove.apply( elements[i],[null,speed,ease,true]);
 				}
 			}
 			return $this;
@@ -3216,58 +3282,58 @@
 		padHex		: function(h){return h.length > 3 ? h : h.substring(0,1)+h.substring(0,1)+h.substring(1,2)+h.substring(1,2)+h.substring(2,3)+h.substring(2,3) ; },
 
 		HueToRGB : function(p, q, t){
-		    if(t < 0) t += 1;
-		    if(t > 1) t -= 1;
-		    if(t < 1/6) return p + (q - p) * 6 * t;
-		    if(t < 1/2) return q;
-		    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-		    return p;
+			if(t < 0) t += 1;
+			if(t > 1) t -= 1;
+			if(t < 1/6) return p + (q - p) * 6 * t;
+			if(t < 1/2) return q;
+			if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+			return p;
 		},
 
 		HSLToRGB : function(h, s, l, a, f){
-		    var r, g, b;
+			var r, g, b;
 
 			// Convert HSL back to fractions.
 			h/=360;s/=100;l/=100;
 
-		    if(s == 0){
-		        r = g = b = l; // achromatic
-		    }else{
-		        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-		        var p = 2 * l - q;
-		        r = $[plugin_name].colors.HueToRGB(p, q, h + 1/3);
-		        g = $[plugin_name].colors.HueToRGB(p, q, h);
-		        b = $[plugin_name].colors.HueToRGB(p, q, h - 1/3);
-		    }
+			if(s == 0){
+				r = g = b = l; // achromatic
+			}else{
+				var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+				var p = 2 * l - q;
+				r = $[plugin_name].colors.HueToRGB(p, q, h + 1/3);
+				g = $[plugin_name].colors.HueToRGB(p, q, h);
+				b = $[plugin_name].colors.HueToRGB(p, q, h - 1/3);
+			}
 
 			var rgb = [Math.round(r*255),Math.round(g*255),Math.round(b*255)];
 
 			// If we've specified an alpha level, then we want to include that in the result.
-		    if( f ){ if(a!==undefined){ rgb[3]=a }; return rgb; };
-		    return (a!==undefined?'rgba':'rgb')+'('+rgb.join(', ')+(a!==undefined?', '+a+')':')');
+			if( f ){ if(a!==undefined){ rgb[3]=a }; return rgb; };
+			return (a!==undefined?'rgba':'rgb')+'('+rgb.join(', ')+(a!==undefined?', '+a+')':')');
 		},
 
 		// Method to convert RGB to HSL for manipulation.
 		RGBToHSL : function(r, g, b){
-		    r /= 255, g /= 255, b /= 255;
-		    var max = Math.max(r, g, b), min = Math.min(r, g, b);
-		    var h, s, l = (max + min) / 2;
+			r /= 255, g /= 255, b /= 255;
+			var max = Math.max(r, g, b), min = Math.min(r, g, b);
+			var h, s, l = (max + min) / 2;
 
-		    if(max == min){
-		        h = s = 0; // achromatic
-		    }else{
-		        var d = max - min;
-		        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-		        switch(max){
-		            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-		            case g: h = (b - r) / d + 2; break;
-		            case b: h = (r - g) / d + 4; break;
-		        }
-		        h /= 6;
-		    }
+			if(max == min){
+				h = s = 0; // achromatic
+			}else{
+				var d = max - min;
+				s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+				switch(max){
+					case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+					case g: h = (b - r) / d + 2; break;
+					case b: h = (r - g) / d + 4; break;
+				}
+				h /= 6;
+			}
 
 			// Convert HSL from fractions.
-		    return [Math.round(h*360), Math.round(s*100), Math.round(l*100)];
+			return [Math.round(h*360), Math.round(s*100), Math.round(l*100)];
 		},
 
 		brightness : function (r, g, b){
