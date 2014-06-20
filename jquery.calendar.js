@@ -1747,6 +1747,7 @@
 						$events.each(function( i, event ){
 
 							var $event		= $(event),
+								selected	= $event.hasClass('selected'),
 								dayBegins	= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimestart ),
 								dayEnds		= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimeend );
 
@@ -1783,9 +1784,10 @@
 								left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.cache.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
 								width			: ( values.resource !== null ? data.cache.resourceWidth : data.cache.dayWidth ) - 1,
 								height			: Math.min( data.cache.dayHeight, data.cache.incrementHeight * ( i<1 ? values.begins : dayBegins ).getIncrementBetween( ( i==$events.length-1 ? values.cache.ends : dayEnds ), data.settings.gridincrement ) ),
-								backgroundColor : $event.hasClass('selected') ? values.colors.mainSelected : values.colors.mainBackground,
+								backgroundColor : selected ? values.colors.mainSelected : values.colors.mainBackground,
 								textShadow		: values.colors.mainTextShadow+' 1px 1px 1px',
-								color			: values.colors.mainText
+								color			: values.colors.mainText,
+								'z-index'		: selected ? '9999' : values.overlap.zindex
 							}
 
 							newStylesMain.width -= data.settings.overlapoffset*values.overlap.count;
@@ -1795,7 +1797,7 @@
 								backgroundColor	: values.colors.detailsBackground,
 								textShadow		: values.colors.detailsTextShadow+' 1px 1px 1px',
 								color			: values.colors.detailsText,
-								'z-index'		: values.overlap.zindex
+								'z-index'		: selected ? '9999' : values.overlap.zindex
 							}
 
 							// If the event display is too small to show any meaningful details area
