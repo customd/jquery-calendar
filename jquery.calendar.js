@@ -438,7 +438,9 @@
 					){
 						// Initialise the overlap object.
 						events[uid].overlap = {
+							partial		: true,
 							inset		: 0,
+							zindex		: 0,
 							count		: 0,
 							index		: 0,
 							items		: {},
@@ -488,10 +490,35 @@
 									check[uid1].overlap.items[check[uid2].overlap.uid] = check[uid2];
 									check[uid2].overlap.items[check[uid1].overlap.uid] = check[uid1];
 									check[uid1].overlap.count++;
-									check[uid2].overlap.count = check[uid1].overlap.count;
+									check[uid2].overlap.count++;
 
-									// Set the new inset.
-									check[uid2].overlap.inset = check[uid1].overlap.inset+1;
+									if( // The begin times are exactly the same...
+										check[uid1].begins.getTime() == check[uid2].begins.getTime()
+									){
+
+										// Set these up as non-partial overlaps.
+										check[uid1].overlap.partial = false;
+										check[uid2].overlap.partial = false;
+
+										// Set the new inset for non-partial overlaps.
+										check[uid2].overlap.inset = check[uid1].overlap.inset+1;
+										check[uid2].overlap.zindex = check[uid1].overlap.zindex+1;
+
+									} else if( // The begins time is less than the ends time.
+										check[uid1].begins.getTime() < check[uid2].begins.getTime()
+									){
+
+										// Increment the inset if this is a partial overlap.
+										if( check[uid1].overlap.partial ) check[uid2].overlap.inset++;
+										check[uid2].overlap.zindex = check[uid1].overlap.zindex+1;
+
+									} else {
+
+										// Increment the first appointments inset if this is a partial overlap.
+										if( check[uid2].overlap.partial ) check[uid1].overlap.inset++;
+										check[uid1].overlap.zindex = check[uid2].overlap.zindex+1;
+
+									}
 
 									// Update the cache.
 									data.cache.events[check[uid1].overlap.uid] = check[uid1];
@@ -1768,7 +1795,7 @@
 								backgroundColor	: values.colors.detailsBackground,
 								textShadow		: values.colors.detailsTextShadow+' 1px 1px 1px',
 								color			: values.colors.detailsText,
-								'z-index'		: values.overlap.inset
+								'z-index'		: values.overlap.zindex
 							}
 
 							// If the event display is too small to show any meaningful details area
