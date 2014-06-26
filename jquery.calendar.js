@@ -3011,24 +3011,6 @@
 										if( clonedDateFormat === todayDate ) $label.add($dates.eq(i)).addClass('ui-'+plugin_name+'-today');
 									});
 
-									$('div.ui-'+plugin_name+'-date',data.elements.container).removeClass('ui-'+plugin_name+'-today').each(function(i,label){
-
-										// Get a shortcut to the label, and create the new date objects.
-										var $date				= $(date),
-											clonedDateObject	= newdate.addDays(i),
-											clonedDateFormat	= clonedDateObject.format('Y-m-d');
-
-										// Set the dayblock's date attribute
-										$date.attr({
-											'date'		: clonedDateFormat,
-											'day'		: clonedDateObject.getDay()
-										});
-
-										// Make sure we add the 'today' class to the calendar.
-										if( clonedDateFormat === todayDate ) $date.addClass('ui-'+plugin_name+'-today');
-
-									});
-
 								break;
 
 							}
