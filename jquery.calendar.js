@@ -440,6 +440,7 @@
 						events[uid].overlap = {
 							partial		: true,
 							inset		: 0,
+							zindex		: 0,
 							count		: 0,
 							index		: 0,
 							items		: {},
@@ -501,6 +502,7 @@
 
 										// Set the new inset for non-partial overlaps.
 										check[uid2].overlap.inset = check[uid1].overlap.inset+1;
+										check[uid2].overlap.zindex = check[uid1].overlap.zindex+1;
 
 									} else if( // The begins time is less than the ends time.
 										check[uid1].begins.getTime() < check[uid2].begins.getTime()
@@ -508,11 +510,13 @@
 
 										// Increment the inset if this is a partial overlap.
 										if( check[uid1].overlap.partial ) check[uid2].overlap.inset++;
+										check[uid2].overlap.zindex = check[uid1].overlap.zindex+1;
 
 									} else {
 
 										// Increment the first appointments inset if this is a partial overlap.
 										if( check[uid2].overlap.partial ) check[uid1].overlap.inset++;
+										check[uid1].overlap.zindex = check[uid2].overlap.zindex+1;
 
 									}
 
@@ -1743,6 +1747,7 @@
 						$events.each(function( i, event ){
 
 							var $event		= $(event),
+								selected	= $event.hasClass('selected'),
 								dayBegins	= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimestart ),
 								dayEnds		= $[plugin_name].date( values.begins.addDays(i), data.settings.daytimeend );
 
@@ -1779,9 +1784,10 @@
 								left			: data.cache.dayWidth * ( data.settings.startdate.getDaysBetween( values.cache.begins, true ) + i ) + ( data.cache.resourceWidth * values.resource ),
 								width			: ( values.resource !== null ? data.cache.resourceWidth : data.cache.dayWidth ) - 1,
 								height			: Math.min( data.cache.dayHeight, data.cache.incrementHeight * ( i<1 ? values.begins : dayBegins ).getIncrementBetween( ( i==$events.length-1 ? values.cache.ends : dayEnds ), data.settings.gridincrement ) ),
-								backgroundColor : $event.hasClass('selected') ? values.colors.mainSelected : values.colors.mainBackground,
+								backgroundColor : selected ? values.colors.mainSelected : values.colors.mainBackground,
 								textShadow		: values.colors.mainTextShadow+' 1px 1px 1px',
-								color			: values.colors.mainText
+								color			: values.colors.mainText,
+								'z-index'		: selected ? '9999' : values.overlap.zindex
 							}
 
 							newStylesMain.width -= data.settings.overlapoffset*values.overlap.count;
@@ -1790,7 +1796,8 @@
 							var newStylesDetails = {
 								backgroundColor	: values.colors.detailsBackground,
 								textShadow		: values.colors.detailsTextShadow+' 1px 1px 1px',
-								color			: values.colors.detailsText
+								color			: values.colors.detailsText,
+								'z-index'		: selected ? '9999' : values.overlap.zindex
 							}
 
 							// If the event display is too small to show any meaningful details area
