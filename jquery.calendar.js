@@ -1,11 +1,11 @@
 /**
  * jQuery calendar plug-in 1.1.1
- * Copyright 2012, Digital Fusion
+ * Copyright 2017, Custom D
  * Licensed under the MIT license.
- * http://opensource.teamdf.com/license/
+ * https://customd.github.io/jquery-calendar/LICENSE.txt
  *
- * @author Sam Sehnert | sam@teamdf.com
- * @docs http://opensource.teamdf.com/calendar/docs/
+ * @author Sam Sehnert | sam@customd.com
+ * @docs https://customd.github.io/jquery-calendar
  *
  * Implement an extremely flexible calendar interface with minimal up front development.
  */
