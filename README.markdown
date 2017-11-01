@@ -1,6 +1,6 @@
 jQuery Calendar Plugin
 ======================
-### By Sam Sehnert, [Digital Fusion](http://teamdf.com/) 2012
+### By Sam Sehnert, [Custom D](https://www.customd.com/) 2017
 
 This is a [jQuery](http://jquery.com/) plugin which allows developers to implement an 
 extremely flexible calendar interface with minimal up front development. The calendar 
@@ -11,11 +11,11 @@ Demos
 
 The Demos for this plugin live under the examples/ directory. Open them directly in your web browser, or view the following online example:
 
-- [Day Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/day.html)
-- [Week Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/week.html)
-- [Month Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/month.html)
-- ['Resource' Calendar](http://www.teamdf.com/jquery-plugins/calendar/examples/resource.html)
-- [London 2012 Olympics iCalendar Feed](http://www.teamdf.com/jquery-plugins/calendar/examples/london-2012-ics.html)
+- [Day Calendar](https://customd.github.io/jquery-calendar/examples/day.html)
+- [Week Calendar](https://customd.github.io/jquery-calendar/examples/week.html)
+- [Month Calendar](https://customd.github.io/jquery-calendar/examples/month.html)
+- ['Resource' Calendar](https://customd.github.io/jquery-calendar/examples/resource.html)
+- [London 2012 Olympics iCalendar Feed](https://customd.github.io/jquery-calendar/examples/london-2012-ics.html)
 
 Documentation
 -------------
@@ -38,7 +38,7 @@ The calendar plugin includes its own date and time formatting methods (using [PH
 
 	$.cal.format( new Date(), 'Y-m-d H:i:s' );
 
-You can also perform complicated date/time arithmetic using the built in date object extender (see the [full plugin documentation](http://teamdf.com/jquery-plugins/calendar/) for more details).
+You can also perform complicated date/time arithmetic using the built in date object extender (see the [full plugin documentation](https://customd.github.io/jquery-calendar/docs) for more details).
 
 	var myDate = $.cal.date( '2012-01-01 08:00:00' );
 	myDate.addHours(1.5).format('D, jS F Y, G:i a');
@@ -48,10 +48,10 @@ You can also perform complicated date/time arithmetic using the built in date ob
 ### Full plugin documentation
 
 The Documentation for this plugin lives under the docs/ directory. Open it directly 
-in your web browser, or see the [online documentation](http://teamdf.com/jquery-plugins/calendar/).
+in your web browser, or see the [online documentation](https://customd.github.io/jquery-calendar/docs).
 
 License
 -------
 
-Copyright 2012, [Digital Fusion](http://teamdf.com),
-Released under the [MIT license](http://teamdf.com/jquery-plugins/license/).
+Copyright 2017, [Custom D](https://www.customd.com),
+Released under the [MIT license](LICENSE.t)xt.
